@@ -2,23 +2,38 @@ extern crate reqwest;
 extern crate serde_json;
 
 use std::fmt;
-use reqwest::Client;
+use reqwest::{Client,StatusCode};
 use serde_json::{json, Error};
 use serde::{Deserialize};
+use std::fs::read_to_string;
 
 #[derive(Deserialize,Debug)]
 struct Token {
     token: String,
 }
+#[derive(Deserialize,Debug)]
+struct EasError {
+    Message: String,
+}
+#[derive(Deserialize,Debug)]
+enum EasResult {
+    Token,
+    EasError,
+    None
+}
+
 impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "token: {}", self.token)
     }
 }
-enum Maybe {
-    Token(Token),
-    None
+
+impl std::fmt::Display for EasError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "message: {}", self.Message)
+    }
 }
+
 
 /*
 Test de base appel http pour récupérer des data JSON
@@ -46,12 +61,12 @@ async fn get_data() -> Result<(), reqwest::Error> {
 /*
 Tests des web services d'EAS
  */
-async fn get_token(display : bool) -> Result<Option<Token>, reqwest::Error> {
+async fn eas_get_token(display : bool) -> Result<Option<Token>, reqwest::Error> {
     let request_url = "https://appdev.cecurity.com/EAS.INTEGRATOR.API/service/authenticate";
-    println!("Start");
+    println!("Start get token");
     let payload = json!({
     "appId":"f33c398c-0f77-4351-9f92-1e20fa3fd2f8",
-    "appToken":"e1320735-e174-4150-9edb-b5daf85be6d1",
+    "appToken":"e1320735-e174-4150-9edb-b5daf85be6d1-xx",
     "accountName":"demoAccount"
     });
     let response = Client::new()
@@ -61,6 +76,11 @@ async fn get_token(display : bool) -> Result<Option<Token>, reqwest::Error> {
         .json(&payload)
         .send().await?;
     let sc = response.status();
+    if (!sc.is_success()) {
+        println!("Request failed => {}",sc);
+        let status_string = sc.as_str();
+        let r: Result<EasError, Error> = serde_json::from_str(&status_string);
+    }
     if (display) {
         let headers = response.headers();
         for (key, value) in headers.iter() {
@@ -83,7 +103,7 @@ async fn get_token(display : bool) -> Result<Option<Token>, reqwest::Error> {
         Ok(res) => Some(res),
         Err(e) => None
     };
-    println!("stop");
+    println!("stop get token");
     Ok(t)
 }
 /*
@@ -127,29 +147,51 @@ async fn send_sms() -> Result<(), reqwest::Error> {
     println!("stop");
     Ok(())
 }
+async fn eas_process() -> Result<(bool), reqwest::Error > {
+    let opt_t = eas_get_token(true).await;
+    let (t1 , status) = match opt_t {
+        Result::Ok(Some(t)) => {
+            println!("token found {}",t);
+            (Some(t), true)
+        },
+        Ok(None) => {
+            println!("Error (?) while getting token");
+            (None, false)
+        },
+        Err(e) => {
+            println!("Error while getting token : => {}",e);
+            (None, false)
+        }
+    };
+    if (!status) {
+        println!("Failed to get token. End eas process !");
+        return Ok(false);
+    }
+    let token = match t1 {
+        Some(t) => t,
+        _ => Token { token: String::from("BadToken")}
+    };
+    if (token.token.eq("BadToken")) {
+        println!("Failed to deserialize token. End eas process !");
+        return Ok(false);
+    }
+    println!("MyToken is {}",token);
+/*
+    let t : Token = Token
+    {token: String::from("myToken")};
 
+ */
+    return Ok(true);
+}
 #[tokio::main]
 async fn main() {
     //send_sms().await;
     //get_data().await;
-    let opt_t = get_token(false).await;
-    let t1 = match opt_t {
-        Result::Ok(Some(t)) => {
-            println!("token found {}",t);
-            Some(t)
-        },
-        _ => {
-            println!("Error");
-            None
-        }
-    };
-    let token = match t1 {
-        Some(t) => t,
-        _ => Token { token: String::from("myToken")}
-    };
-    println!("MyToken is {}",token);
-    let t : Token = Token
-        {token: String::from("myToken")};
-
-    println!("ok");
+    let final_result = eas_process().await;
+    match final_result {
+        Ok(true) =>  println!("eas test is ok"),
+        Ok(false) => println!("eas test failed"),
+        Err(e) => println!("Reqwest error {:#}",e)
+    }
+    println!("end");
 }
