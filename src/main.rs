@@ -17,8 +17,8 @@ struct EasError {
 }
 #[derive(Deserialize,Debug)]
 enum EasResult {
-    Token,
-    EasError,
+    Token (Token),
+    EasError (EasError),
     None
 }
 
@@ -61,12 +61,12 @@ async fn get_data() -> Result<(), reqwest::Error> {
 /*
 Tests des web services d'EAS
  */
-async fn eas_get_token(display : bool) -> Result<Option<Token>, reqwest::Error> {
-    let request_url = "https://appdev.cecurity.com/EAS.INTEGRATOR.API/service/authenticate";
+async fn eas_get_token(display : bool) -> Result<EasResult, reqwest::Error> {
+    let request_url = "https://appdev.cecurity1.com/EAS.INTEGRATOR.API/service/authenticate";
     println!("Start get token");
     let payload = json!({
     "appId":"f33c398c-0f77-4351-9f92-1e20fa3fd2f8",
-    "appToken":"e1320735-e174-4150-9edb-b5daf85be6d1-xx",
+    "appToken":"e1320735-e174-4150-9edb-b5daf85be6d1",
     "accountName":"demoAccount"
     });
     let response = Client::new()
@@ -76,11 +76,6 @@ async fn eas_get_token(display : bool) -> Result<Option<Token>, reqwest::Error> 
         .json(&payload)
         .send().await?;
     let sc = response.status();
-    if (!sc.is_success()) {
-        println!("Request failed => {}",sc);
-        let status_string = sc.as_str();
-        let r: Result<EasError, Error> = serde_json::from_str(&status_string);
-    }
     if (display) {
         let headers = response.headers();
         for (key, value) in headers.iter() {
@@ -88,6 +83,24 @@ async fn eas_get_token(display : bool) -> Result<Option<Token>, reqwest::Error> 
         }
     }
     let body = response.text().await.unwrap();
+    if (!sc.is_success()) {
+        println!("Request failed => {}",sc);
+        let status_string = sc.as_str();
+        let r: Result<EasError, Error> = serde_json::from_str(&body);
+        let r_final = match r {
+            Ok(res) => {
+                //println!("EAS error: => {}",res);
+                EasResult::EasError(res)
+            },
+            Err(e) => {
+                //println!("EAS error???: => {}",e);
+                EasResult::None
+            }
+        };
+        return Ok(r_final);
+    }
+
+
 
     if (display) {
         // Affiche le statut
@@ -99,9 +112,9 @@ async fn eas_get_token(display : bool) -> Result<Option<Token>, reqwest::Error> 
     // Conversion en jeton
 
     let r: Result<Token, Error> = serde_json::from_str(&body);
-    let t = match r {
-        Ok(res) => Some(res),
-        Err(e) => None
+    let t: EasResult = match r {
+        Ok(res) => EasResult::Token(res),
+        Err(e) => EasResult::None
     };
     println!("stop get token");
     Ok(t)
@@ -148,39 +161,32 @@ async fn send_sms() -> Result<(), reqwest::Error> {
     Ok(())
 }
 async fn eas_process() -> Result<(bool), reqwest::Error > {
-    let opt_t = eas_get_token(true).await;
-    let (t1 , status) = match opt_t {
-        Result::Ok(Some(t)) => {
+    let opt_t = eas_get_token(false).await;
+
+    let (eas_r,status) = match opt_t {
+        Ok(EasResult::Token(t)) => {
             println!("token found {}",t);
-            (Some(t), true)
+            (EasResult::Token(t), true)
         },
-        Ok(None) => {
+        Ok(EasResult::EasError(eas )) => {
+            println!("eas error found {}",eas);
+            (EasResult::EasError(eas), false)
+        },
+        Ok(EasResult::None) => {
             println!("Error (?) while getting token");
-            (None, false)
+            (EasResult::None, false)
         },
         Err(e) => {
             println!("Error while getting token : => {}",e);
-            (None, false)
+            (EasResult::None, false)
         }
     };
+
     if (!status) {
         println!("Failed to get token. End eas process !");
         return Ok(false);
     }
-    let token = match t1 {
-        Some(t) => t,
-        _ => Token { token: String::from("BadToken")}
-    };
-    if (token.token.eq("BadToken")) {
-        println!("Failed to deserialize token. End eas process !");
-        return Ok(false);
-    }
-    println!("MyToken is {}",token);
-/*
-    let t : Token = Token
-    {token: String::from("myToken")};
 
- */
     return Ok(true);
 }
 #[tokio::main]
