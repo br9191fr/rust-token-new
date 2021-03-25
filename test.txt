@@ -1,0 +1,14 @@
+curl -v --location --request POST 'https://appdev.cecurity.com/EAS.INTEGRATOR.API/eas/documents' \
+--header 'Authorization: Bearer d2cwRWxaYzR5RVl5UGhZJTJCSG9HZXlFYk15JTJCMzFNb09FMUwwRGtuTXJMVFVnZlhaajNpZ1poaWQlMkJNbFZRaWJmRXhiWFJ0STBESG9DRFRSVkY5eE12TzN2JTJCYUFDU0RESXRHSXNZQXglMkZHOHBaQ2ZQY1FsbU1VRGhJZzZ4czhiYmRDUkh1OFRPS1dVYXhJc2ExMjZIU2FqTkxGOEZnenIzN21ITHNJJTJCaHpsUGlJYm5ZaHRxWWozNWNWTEQ0c2tKeUJLQnhXZ09zT2s5d0p5aTh0RWRoU0E1OVJIZVRVM2l3a29rbUxVOWlWaHJwSzVneURpT1dCd1BUTEN3cXRDaSUyQjJ6U21QJTJCTTBlNVBUS3lLS1pjYnRaMUZCQ2FxbWZoOTVZUnJ0bDVnR0E2cGR1djcyczlPODR5VWtXODhNbE1FTkpLTlFSclhrZSUyRkRYNk0wcmJWTFAwd2JBUmh0dGZvbVM5QzM0RDk4cW5CN2hvJTNE' \
+--form 'document=@"/Users/bruno/dvlpt/rust/test.txt"' \
+--form 'fingerprint=""' \
+--form 'fingerprintAlgorithm="none"' \
+--form 'metadata="[{name: \"ClientId\", value: \"1\"}, {name: \"CustomerId\", value: \"2\"}]"'
+
+
+{"archive_ticket":"A_A4771D575088474DACFEF46F01CF7FF4_1"}
+{"archive_ticket":"A_4C1DA65D9E0A4127927C88ABA87AC84E_1"}
+{"archive_ticket":"A_A2616937451545D1BCC96F053779CA23_1"}
+{\"archive_ticket\":\"A_BF0FCFC1ED7E4507ABD03E152C431460_1\"}
+{\"archive_ticket\":\"A_4EE0DBF4470841378E1FFC8FD10B0C15_1\"}
+{"Message":"[INT007] Parameter 'metadata' not provided."}
