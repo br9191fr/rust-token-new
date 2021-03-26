@@ -30,6 +30,8 @@ mod tests {
     }
     #[test]
     fn test_base64_decoding() {
+        //
+        //assert_eq!(BASE64.decode(b"SGVsbG8gd29ybGQK").unwrap(), b"Hello world");
         assert_eq!(BASE64.decode(b"SGVsbG8gd29ybGQ=").unwrap(), b"Hello world");
         assert_eq!(BASE64.decode(b"SGVsbA==byB3b3JsZA==").unwrap(), b"Hello world");
     }

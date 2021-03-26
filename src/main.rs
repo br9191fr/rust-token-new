@@ -36,6 +36,7 @@ struct EasError {
 enum EasResult {
     Token (Token),
     ArchiveTicket (ArchiveTicket),
+    EasDocument (EasDocument),
     EasError (EasError),
     None
 }
@@ -45,6 +46,12 @@ struct EasInfo {
     filename : String,
     digest : String,
 }
+#[derive(Deserialize,Debug)]
+struct EasDocument {
+    mimeType : String,
+    base64Document : String,
+}
+// TODO Define constant with EAS parameters
 impl Token {
     fn get_token(&self) -> &String {
         let string = &self.token;
@@ -55,6 +62,24 @@ impl ArchiveTicket {
     fn get_archive_ticket(&self) -> &String {
         let string = &self.archiveTicket;
         string
+    }
+}
+impl EasResult {
+    fn get_archive_ticket(&self) -> Option<&String> {
+        if let EasResult::ArchiveTicket(at) = self {
+            Some(at.get_archive_ticket())
+        }
+        else {
+            None
+        }
+    }
+    fn get_token(&self) -> Option<&String> {
+        if let EasResult::Token(t) = self {
+            Some(t.get_token())
+        }
+        else {
+            None
+        }
     }
 }
 impl std::fmt::Display for Token {
@@ -68,6 +93,13 @@ impl std::fmt::Display for EasError {
         writeln!(f, "message: {}", self.message)
     }
 }
+
+impl std::fmt::Display for EasDocument {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "token: {:#?},{:#?}", self.mimeType,self.base64Document)
+    }
+}
+
 impl EasInfo {
     fn new(token : String, filename : String, digest : String) -> Self {
         EasInfo {
@@ -102,9 +134,8 @@ fn sha256_digest<R: Read>(mut reader: R) -> Result<Digest,Error> {
     Ok(context.finish())
 }
 // reqwest::Error
-fn get_result_status<T>(opt_t : Result<EasResult, T>) -> (EasResult,bool)
 
-    {
+fn get_result_status<T>(opt_t : Result<EasResult, T>) -> (EasResult,bool) {
     let (eas_r,status) = match opt_t {
         Ok(EasResult::Token(t)) => {
             (EasResult::Token(t), true)
@@ -184,11 +215,12 @@ async fn eas_get_token(display : bool) -> Result<EasResult, reqwest::Error> {
     Ok(t)
 }
 
-async fn eas_post_document(eas_info : EasInfo, display : bool) -> Result<EasResult, Box<dyn std::error::Error>> aslib{
+async fn eas_post_document(eas_info : EasInfo, display : bool) -> Result<EasResult, Box<dyn std::error::Error>>  {
     let request_url = "https://appdev.cecurity.com/EAS.INTEGRATOR.API/eas/documents";
     if display { println!("Start post document"); }
     let auth_bearer = format!("Bearer {}", eas_info.token);
     //let fname = eas_info.filename.as_str();
+    // TODO Pass original file to eas_post_document function
     let fname = "/Users/bruno/dvlpt/rust/test.txt";
     let path = Path::new(fname);
     let file = Tokio_File::open(path).await?;
@@ -257,7 +289,73 @@ async fn eas_post_document(eas_info : EasInfo, display : bool) -> Result<EasResu
     if display { println!("Stop post document"); }
     Ok(a_ticket)
 }
+async fn eas_download_document(token: String,ticket: String,display: bool) -> Result<EasResult, reqwest::Error> {
 
+    let request_url = format!("{}/{}","https://appdev.cecurity.com/EAS.INTEGRATOR.API/eas/documents",ticket);
+    if display { println!("Start download document"); }
+    let auth_bearer = format!("Bearer {}", token);
+
+    let response = Client::new()
+        .get(request_url)
+        .header("Accept", "application/json")
+        .header("AuThorization", auth_bearer)
+        .send().await?;
+    let sc = response.status();
+    if display {
+        let headers = response.headers();
+        for (key, value) in headers.iter() {
+            println!("{:?}: {:?}", key, value);
+        }
+    }
+    let body = response.text().await.unwrap();
+    if !sc.is_success() {
+        println!("Request failed => {}",sc);
+
+        let r: Result<EasError, Error> = serde_json::from_str(&body);
+        let r_final = match r {
+            Ok(res) => {
+                //println!("EAS error: => {}",res);
+                EasResult::EasError(res)
+            },
+            Err(_e) => {
+                //println!("EAS error???: => {}",e);
+                EasResult::None
+            }
+        };
+        return Ok(r_final);
+    }
+
+
+    if display {
+        // Affiche le statut
+        println!("Status : {:#?}", sc);
+        // Affiche le body <=> jeton
+        println!("Body : {:#?}", body);
+    }
+
+    // récupération du fichier
+
+    let r: Result<EasDocument, Error> = serde_json::from_str(&body);
+    let eas_r: EasResult = match r {
+        Ok(res) => EasResult::EasDocument(res),
+        Err(_e) => EasResult::None
+    };
+    // décodage base64 => [u8]
+    // TODO pass destination file to eas_download_document function
+    if display {
+        if let EasResult::EasDocument(res) = &eas_r {
+            let b64_document = &res.base64Document;
+            let document = BASE64.decode(b64_document.as_bytes()).unwrap();
+            let final_document = String::from_utf8(document).unwrap();
+            println!("Document: {:#?}",final_document);
+            let mut file = File::create("test_eas").unwrap();
+            // Write a slice of bytes to the file
+            file.write_all(final_document.as_bytes());
+        }
+    }
+    if display { println!("stop get document"); }
+    Ok(eas_r)
+}
 async fn eas_process(filename: &str) -> Result<bool, reqwest::Error > {
     let digest_string : String ;
     let token_string;
@@ -276,6 +374,7 @@ async fn eas_process(filename: &str) -> Result<bool, reqwest::Error > {
         println!("Error openning file {}",filename);
         return Ok(false);
     }
+    // authenticate and get token
     let opt_t = eas_get_token(false).await;
     let (eas_r,status) = get_result_status(opt_t);
 
@@ -286,8 +385,9 @@ async fn eas_process(filename: &str) -> Result<bool, reqwest::Error > {
     }
     println!("token found {}",token_string);
     println!("SHA256 Digest for {} is {}",filename,digest_string);
+
     // upload document now
-    let eas_info = EasInfo::new(token_string,filename.to_string(),digest_string);
+    let eas_info = EasInfo::new(token_string.clone(),filename.to_string(),digest_string);
     let opt_a = eas_post_document(eas_info,true).await;
     let (eas_r, status) = get_result_status(opt_a);
     let archive_ticket = get_inner_ticket(eas_r).unwrap();
@@ -296,6 +396,11 @@ async fn eas_process(filename: &str) -> Result<bool, reqwest::Error > {
         return Ok(false);
     }
     println!("Archive ticket : {}",archive_ticket);
+
+    // get matching documents
+
+    // download document
+    let opt_d = eas_download_document(token_string.clone(), archive_ticket.clone(),true).await;
     return Ok(true);
 }
 
