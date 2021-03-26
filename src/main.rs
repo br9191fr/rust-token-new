@@ -7,7 +7,7 @@ use std::fs::File;
 use std::io::{BufReader, Read, Write};
 use std::path::Path;
 
-use data_encoding::HEXLOWER;
+use data_encoding::{HEXLOWER, BASE64};
 
 
 use reqwest::{Body, Client};
@@ -99,7 +99,6 @@ fn sha256_digest<R: Read>(mut reader: R) -> Result<Digest,Error> {
             context.update(&buffer[..count]);
         }
     }
-
     Ok(context.finish())
 }
 // reqwest::Error
@@ -185,7 +184,7 @@ async fn eas_get_token(display : bool) -> Result<EasResult, reqwest::Error> {
     Ok(t)
 }
 
-async fn eas_post_document(eas_info : EasInfo, display : bool) -> Result<EasResult, Box<dyn std::error::Error>> {
+async fn eas_post_document(eas_info : EasInfo, display : bool) -> Result<EasResult, Box<dyn std::error::Error>> aslib{
     let request_url = "https://appdev.cecurity.com/EAS.INTEGRATOR.API/eas/documents";
     if display { println!("Start post document"); }
     let auth_bearer = format!("Bearer {}", eas_info.token);
@@ -264,13 +263,9 @@ async fn eas_process(filename: &str) -> Result<bool, reqwest::Error > {
     let token_string;
     let archive_ticket : String ;
     if let Ok(input_file) = File::open(filename) {
-        //println!("Digest computation step 2");
         let reader = BufReader::new(input_file);
-        //println!("Digest computation step 3");
         if let Ok(digest) = sha256_digest(reader) {
-            //println!("SHA256 Digest is {:#?}",digest);
             digest_string = HEXLOWER.encode(digest.as_ref());
-            //println!("SHA256 Digest for {} is {}",filename,digest_string);
         }
         else {
             println!("Error while digest computation");
@@ -296,15 +291,18 @@ async fn eas_process(filename: &str) -> Result<bool, reqwest::Error > {
     let opt_a = eas_post_document(eas_info,true).await;
     let (eas_r, status) = get_result_status(opt_a);
     let archive_ticket = get_inner_ticket(eas_r).unwrap();
+    if !status {
+        println!("Failed to get archive ticket. End eas process !");
+        return Ok(false);
+    }
     println!("Archive ticket : {}",archive_ticket);
     return Ok(true);
 }
 
 #[tokio::main]
 async fn main() {
-    //send_sms().await;
-    //get_data().await;
-    let file_to_archive = "/Users/bruno/dvlpt/rust/test.txt";
+
+    let file_to_archive  = "/Users/bruno/dvlpt/rust/test.txt";
     let final_result = eas_process(file_to_archive).await;
     match final_result {
         Ok(true) =>  println!("eas test is ok"),

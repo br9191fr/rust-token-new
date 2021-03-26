@@ -30,7 +30,7 @@ async fn get_data() -> Result<(), reqwest::Error> {
     println!("stop");
     Ok(())
 }
-/*
+
 
 /*
 Connexion à un service d'envoi de SMS via appel de web service
@@ -78,6 +78,5 @@ async fn send_sms() -> Result<(), reqwest::Error> {
 async fn main() {
     send_sms().await;
     get_data().await;
-
     println!("end");
 }
