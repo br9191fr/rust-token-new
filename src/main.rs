@@ -1,12 +1,4 @@
-//#![feature(async_closure)]
-#[macro_use]
 use std::collections::HashMap;
-extern crate reqwest;
-extern crate serde_json;
-extern crate data_encoding;
-
-extern crate lazy_static;
-
 use std::env;
 use std::fmt;
 use std::fs::File;
@@ -117,6 +109,7 @@ impl EasInfo {
         }
     }
 }
+
 impl EasDocument {
     fn new(mimeType : String, base64Document : String, ) -> Self {
         EasDocument {
@@ -124,6 +117,7 @@ impl EasDocument {
         }
     }
 }
+
 impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "token: {}", self.token)
@@ -135,6 +129,7 @@ impl std::fmt::Display for ArchiveTicket {
         writeln!(f, "archiveTicket: {}", self.archiveTicket)
     }
 }
+
 impl std::fmt::Display for EasError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "message: {}", self.message)
@@ -371,6 +366,7 @@ async fn eas_post_document(eas_info : EasInfo, display : bool) -> Result<EasResu
     if display { println!("Stop post document"); }
     Ok(a_ticket)
 }
+
 async fn eas_download_document(token: String, ticket: String,file_to_restore: String, display: bool) -> Result<EasResult, reqwest::Error> {
 
     let request_url = format!("{}/{}","https://appdev.cecurity.com/EAS.INTEGRATOR.API/eas/documents",ticket);
@@ -422,8 +418,7 @@ async fn eas_download_document(token: String, ticket: String,file_to_restore: St
         Ok(res) => EasResult::EasDocument(res),
         Err(_e) => EasResult::None
     };
-    // décodage base64 => [u8]
-    // TODO pass destination file to eas_download_document function
+    // Transform base64 => [u8] and save
     if let EasResult::EasDocument(res) = &eas_r {
         let mimeType = &*&res.mimeType;
         let b64_document = &res.base64Document;
@@ -504,6 +499,7 @@ async fn eas_get_document_metadata(token: String, ticket: String, display: bool)
     if display { println!("stop retrieve document metadata"); }
     Ok(eas_m)
 }
+
 async fn eas_process(path_to_archive: &str, address: &str, path_to_restore: &str) -> Result<bool, reqwest::Error > {
     let digest_string : String ;
     let token_string;
