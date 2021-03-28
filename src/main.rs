@@ -1,26 +1,30 @@
+//#![feature(async_closure)]
+#[macro_use]
+use std::collections::HashMap;
 extern crate reqwest;
 extern crate serde_json;
 extern crate data_encoding;
+
+extern crate lazy_static;
 
 use std::env;
 use std::fmt;
 use std::fs::File;
 use std::io::{BufReader, Read, Write};
 use std::path::Path;
+use std::str;
+use std::sync::Mutex;
 
 use data_encoding::{HEXLOWER, BASE64};
-
+use lazy_static::lazy_static;
 
 use reqwest::{Body, Client};
 use reqwest::multipart::{Form};
 use ring::digest::{Context, Digest,SHA256};
 use serde_json::{json, Error};
 use serde::{Deserialize};
-use tokio::io::AsyncReadExt;
 use tokio::fs::File as Tokio_File;
 use tokio_util::codec::{BytesCodec, FramedRead};
-//static file_to_archive : &str;
-//let file_to_restore;
 
 #[derive(Deserialize,Debug)]
 struct Token {
@@ -48,6 +52,7 @@ enum EasResult {
 struct EasInfo {
     token: String,
     filename: String,
+    address: String,
     digest: String,
 }
 #[derive(Deserialize, Debug)]
@@ -105,6 +110,20 @@ impl EasResult {
         }
     }
 }
+impl EasInfo {
+    fn new(token : String, filename : String, address : String, digest : String) -> Self {
+        EasInfo {
+            token,filename,address, digest
+        }
+    }
+}
+impl EasDocument {
+    fn new(mimeType : String, base64Document : String, ) -> Self {
+        EasDocument {
+            mimeType, base64Document
+        }
+    }
+}
 impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "token: {}", self.token)
@@ -134,20 +153,6 @@ impl std::fmt::Display for EasNVPair {
     }
 }
 
-impl EasInfo {
-    fn new(token : String, filename : String, digest : String) -> Self {
-        EasInfo {
-            token,filename,digest
-        }
-    }
-}
-impl EasDocument {
-    fn new(mimeType : String, base64Document : String, ) -> Self {
-        EasDocument {
-            mimeType, base64Document
-        }
-    }
-}
 fn get_inner_token(e : EasResult) -> Option<String> {
      match e {
          EasResult::Token  (t)  => Some(t.get_token().to_string()),
@@ -174,7 +179,7 @@ fn sha256_digest<R: Read>(mut reader: R) -> Result<Digest,Error> {
     }
     Ok(context.finish())
 }
-// reqwest::Error
+
 
 fn get_result_status<T>(opt_t : Result<EasResult, T>) -> (EasResult,bool) {
     let (eas_r,status) = match opt_t {
@@ -201,7 +206,18 @@ fn get_result_status<T>(opt_t : Result<EasResult, T>) -> (EasResult,bool) {
     };
     (eas_r,status)
 }
-
+fn string_to_static_str(s: String) -> &'static str {
+    Box::leak(s.into_boxed_str())
+}
+lazy_static! {
+    static ref LOCATIONS: Mutex<HashMap<&'static str, &'static str>> =
+    Mutex::new(generate_static_locations());
+}
+fn generate_static_locations() -> HashMap<&'static str, &'static str> {
+    let mut m = HashMap::new();
+    m.insert("default_location", "/Users/bruno/dvlpt/rust/archive.txt");
+    m
+}
 /*
 Tests des web services d'EAS
  */
@@ -266,25 +282,47 @@ async fn eas_post_document(eas_info : EasInfo, display : bool) -> Result<EasResu
     let request_url = "https://appdev.cecurity.com/EAS.INTEGRATOR.API/eas/documents";
     if display { println!("Start post document"); }
     let auth_bearer = format!("Bearer {}", eas_info.token);
-    //let fname = eas_info.filename.as_str();
+    //let f1 : &str;
     // TODO Pass original file to eas_post_document function
-    let fname = "/Users/bruno/dvlpt/rust/archive.txt";
-    let path = Path::new(fname);
-    let file = Tokio_File::open(fname).await?;
+    let my_ref = LOCATIONS.lock().unwrap();
+    let address = my_ref.get(eas_info.address.as_str());
+    let fname_ok = match address {
+        Some (f) => f,
+        _ => "/Users/bruno/dvlpt/rust/archive.txt",
+    };
+    println!("Uploading {}",fname_ok);
+
+    // async version
+    let path = Path::new(fname_ok);
+    let file = Tokio_File::open(path).await?;
     let stream = FramedRead::new(file, BytesCodec::new());
-    let file_part = reqwest::multipart::Part::stream(Body::wrap_stream(stream))
+    let _file_part = reqwest::multipart::Part::stream(Body::wrap_stream(stream))
         .file_name(path.file_name().unwrap().to_string_lossy())
         .mime_str("application/octet-stream")?;
+
+    // sync version
+    let mut buffer = Vec::new();
+    let path1 = Path::new(fname_ok);
+    let mut file1 = File::open(path1).unwrap();
+    let _file_content_length = file1.read_to_end(&mut buffer);
+    let file_content = str::from_utf8(&*buffer).unwrap().to_string();
+    let file_part1 = reqwest::multipart::Part::text(file_content)
+        .file_name(path1.file_name().unwrap().to_string_lossy())
+        .mime_str("application/octet-stream").unwrap();
 
     let meta = json!([{"name": "ClientId", "value": "1"},
      {"name": "CustomerId", "value": "2"},
      {"name": "Documenttype", "value": "Invoice"}]);
 
+    // TODO choose most appropriate part :
+    // async => file_part
+    // sync  => file_part1
+
     let form = Form::new()
         .text("fingerprint","")
         .text("fingerprintAlgorithm","none")
         .text("metadata",meta.to_string())
-        .part("document",file_part);
+        .part("document",file_part1);
 
     let response = Client::new()
         .post(request_url)
@@ -403,7 +441,6 @@ async fn eas_download_document(token: String, ticket: String,file_to_restore: St
         return Ok(eas_r);
     }
 
-    Ok(eas_r)
 }
 
 async fn eas_get_document_metadata(token: String, ticket: String, display: bool) -> Result<EasResult, reqwest::Error> {
@@ -467,10 +504,11 @@ async fn eas_get_document_metadata(token: String, ticket: String, display: bool)
     if display { println!("stop retrieve document metadata"); }
     Ok(eas_m)
 }
-async fn eas_process(path_to_archive: &str, path_to_restore: &str) -> Result<bool, reqwest::Error > {
+async fn eas_process(path_to_archive: &str, address: &str, path_to_restore: &str) -> Result<bool, reqwest::Error > {
     let digest_string : String ;
     let token_string;
     let archive_ticket : String ;
+    // compute digest of file
     if let Ok(input_file) = File::open(path_to_archive) {
         let reader = BufReader::new(input_file);
         if let Ok(digest) = sha256_digest(reader) {
@@ -482,7 +520,7 @@ async fn eas_process(path_to_archive: &str, path_to_restore: &str) -> Result<boo
         }
     }
     else {
-        println!("Error openning file {}",path_to_archive);
+        println!("Error opening file {}",path_to_archive);
         return Ok(false);
     }
     // authenticate and get token
@@ -498,15 +536,15 @@ async fn eas_process(path_to_archive: &str, path_to_restore: &str) -> Result<boo
     println!("SHA256 Digest for {} is {}",path_to_archive,digest_string);
 
     // upload document now
-    let eas_info = EasInfo::new(token_string.clone(),path_to_archive.to_string(),digest_string);
-    let opt_at = eas_post_document(eas_info,false).await;
+    let eas_info = EasInfo::new(token_string.clone(),path_to_archive.to_string(), address.to_string(),digest_string);
+    let opt_at = eas_post_document(eas_info,true).await;
     let (eas_r, status) = get_result_status(opt_at);
     if !status {
         println!("Failed to get archive ticket. End eas process !");
         return Ok(false);
     }
     eas_r.show();
-    let archive_ticket = get_inner_ticket(eas_r).unwrap();
+    archive_ticket = get_inner_ticket(eas_r).unwrap();
 
     println!("Archive ticket : {}",archive_ticket);
 
@@ -547,9 +585,13 @@ async fn main() {
     }
     let file_to_archive = &args[1];
     let file_to_restore = &args[2];
-
+    let address = "address1";
+    {
+        let mut locations = LOCATIONS.lock().unwrap();
+        locations.insert(address,string_to_static_str(file_to_archive.to_string()));
+    }
     //let file_to_archive  = "/Users/bruno/dvlpt/rust/test.txt";
-    let final_result = eas_process(file_to_archive, file_to_restore).await;
+    let final_result = eas_process(file_to_archive, address,file_to_restore).await;
     match final_result {
         Ok(true) =>  println!("eas test is ok"),
         Ok(false) => println!("eas test failed"),
