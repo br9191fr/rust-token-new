@@ -1,52 +1,45 @@
 extern crate easlib;
 
-use easlib::{compute_digest, eas_get_token, eas_post_document, eas_download_document, eas_get_document_metadata};
-use easlib::{get_result_status, get_inner_token, get_inner_ticket, build_static_locations};
-use easlib::{EasInfo};
+use easlib::{compute_digest, EasAPI};
+use easlib::{get_result_status, build_static_locations};
+
 use std::env;
 
-
-
-
-
-async fn eas_process(path_to_archive: &str, address: &str, path_to_restore: &str) -> Result<bool, reqwest::Error > {
-    let token_string;
-    let archive_ticket : String ;
+async fn eas_process(path_to_archive: &str, address: &str, path_to_restore: &str, display: bool) -> Result<bool, reqwest::Error > {
+    let mut api = EasAPI::new();
     // compute digest of file
-
     let (digest_string, status) = compute_digest(path_to_archive);
     if !status  {return Ok(false);}
-    // authenticate and get token
-    let opt_t = eas_get_token(false).await;
-    let (eas_r,status) = get_result_status(opt_t);
 
-    token_string = get_inner_token(eas_r).unwrap();
+    // authenticate and get token
+    let opt_t = api.eas_get_token(false).await;
+    let (eas_r,status) = get_result_status(opt_t);
     if !status {
         println!("Failed to get token. End eas process !");
         return Ok(false);
     }
-    println!("token found {}",token_string);
-    println!("SHA256 Digest for {} is {}",path_to_archive,digest_string);
+    api.set_digest(digest_string.clone());
+    if display {
+        println!("token found {}",api.get_token_string());
+        println!("SHA256 Digest for {} is {}",path_to_archive,digest_string);
+    }
+    eas_r.show("Get Token");
 
     // upload document now
-    //let eas_info = EasInfo::new(token_string.clone(),path_to_archive.to_string(), address.to_string(),digest_string);
-    let opt_at = eas_post_document(token_string.clone(),address,true).await;
+    let opt_at = api.eas_post_document(
+        address,
+        false).await;
     let (eas_r, status) = get_result_status(opt_at);
     if !status {
         println!("Failed to get archive ticket. End eas process !");
         return Ok(false);
     }
-    eas_r.show();
-    archive_ticket = get_inner_ticket(eas_r).unwrap();
-
-    println!("Archive ticket : {}",archive_ticket);
+    eas_r.show("Upload Doc");
 
     // get matching documents
 
     // download document
-    let opt_d = eas_download_document(
-        token_string.clone(),
-        archive_ticket.clone(),
+    let opt_d = api.eas_download_document(
         path_to_restore.clone().to_string(),
         false).await;
     let (eas_r, status) = get_result_status(opt_d);
@@ -54,18 +47,16 @@ async fn eas_process(path_to_archive: &str, address: &str, path_to_restore: &str
         println!("Failed to get and restore archive. End eas process !");
         return Ok(false);
     }
-    eas_r.show();
+    eas_r.show("Download Doc");
+
     // get document metadata
-    let opt_m = eas_get_document_metadata(
-        token_string.clone(),
-        archive_ticket.clone(),
-        true).await;
+    let opt_m = api.eas_get_document_metadata(false).await;
     let (eas_r, status) = get_result_status(opt_m);
     if !status {
         println!("Failed to get metadata of archive. End eas process !");
         return Ok(false);
     }
-    eas_r.show();
+    eas_r.show("Get Metadata");
     return Ok(true);
 }
 
@@ -81,7 +72,10 @@ async fn main() {
 
     let address = build_static_locations(file_to_archive);
 
-    let final_result = eas_process(file_to_archive, address,file_to_restore).await;
+    let final_result = eas_process(
+    file_to_archive,
+    address,
+    file_to_restore,false).await;
     match final_result {
         Ok(true) =>  println!("eas test is ok"),
         Ok(false) => println!("eas test failed"),
