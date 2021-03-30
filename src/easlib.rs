@@ -14,10 +14,24 @@ use reqwest::{Body, Client};
 use reqwest::multipart::{Form};
 use ring::digest::{Context, Digest,SHA256};
 use serde_json::{json, Error};
-use serde::{Deserialize};
+use serde::{Deserialize,Serialize};
 use tokio::fs::File as Tokio_File;
 use tokio_util::codec::{BytesCodec, FramedRead};
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Credentials {
+    appId: String,
+    appToken: String,
+    accountName: String,
+}
+impl Credentials {
+    pub fn new(id: String, token: String, name: String) -> Self {
+        Credentials {
+            appId: id, appToken: token, accountName: name
+        }
+    }
+
+}
 #[derive(Deserialize,Debug)]
 pub struct Token {
     token: String,
@@ -72,7 +86,6 @@ impl EasResult {
             None
         }
     }
-    // TODO Add show implementation for EasResult::EasMetaData
     pub fn show(&self, msg: &str) {
         match &*self {
             EasResult::Token(t) => println!("[{}] Token: {}",msg,t),
@@ -120,13 +133,17 @@ impl EasDocument {
     }
 }
 pub struct EasAPI {
+    credentials: Credentials,
     token: Option<Token>,
     digest: Option<String>,
     ticket: Option<ArchiveTicket>,
 }
 impl EasAPI {
-    pub fn new() -> Self {
-        EasAPI {token: None,digest: None, ticket: None}
+    pub fn new(credentials: Credentials) -> Self {
+        EasAPI {credentials: credentials, token: None,digest: None, ticket: None}
+    }
+    pub fn set_credentials(&mut self, credentials: Credentials) {
+        self.credentials = credentials;
     }
     pub fn set_token(&mut self, token: String) {
         self.token = Some(Token::new(token));
@@ -156,18 +173,12 @@ impl EasAPI {
         let request_url = "https://appdev.cecurity.com/EAS.INTEGRATOR.API/service/authenticate";
         if display {println!("Start get token");}
 
-        // TODO use const CREDENTIALS here
-        // let payload = json!(CREDENTIALS);
-        let payload = json!({
-    "appId":"f33c398c-0f77-4351-9f92-1e20fa3fd2f8",
-    "appToken":"e1320735-e174-4150-9edb-b5daf85be6d1",
-    "accountName":"demoAccount"
-    });
+        let cred_value = serde_json::to_value(&self.credentials).unwrap();
         let response = Client::new()
             .post(request_url)
             .header("Accept", "application/json")
             .header("Content-Type", "application/json")
-            .json(&payload)
+            .json(&cred_value)
             .send().await?;
 
         let sc = response.status();
@@ -374,6 +385,14 @@ impl EasAPI {
     }
 
 }
+impl std::fmt::Display for Credentials {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "credentials: {}\n{}\n{}",
+                 self.appId,
+                 self.appToken,
+                 self.accountName)
+    }
+}
 impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "token: {}", self.token)
@@ -453,8 +472,6 @@ fn sha256_digest<R: Read>(mut reader: R) -> Result<Digest,Error> {
     }
     Ok(context.finish())
 }
-
-
 pub fn get_result_status<T>(opt_t : Result<EasResult, T>) -> (EasResult,bool) {
     let (eas_r,status) = match opt_t {
         Ok(EasResult::ApiOk) => {

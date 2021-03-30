@@ -1,12 +1,18 @@
 extern crate easlib;
 
-use easlib::{compute_digest, EasAPI};
+use easlib::{compute_digest, EasAPI, Credentials};
 use easlib::{get_result_status, build_static_locations};
 
 use std::env;
 
 async fn eas_process(path_to_archive: &str, address: &str, path_to_restore: &str, display: bool) -> Result<bool, reqwest::Error > {
-    let mut api = EasAPI::new();
+
+    let credentials = Credentials::new(
+        "f33c398c-0f77-4351-9f92-1e20fa3fd2f8".to_owned(),
+        "e1320735-e174-4150-9edb-b5daf85be6d1".to_owned(),
+        "demoAccount".to_owned()
+    );
+    let mut api = EasAPI::new(credentials);
     // compute digest of file
     let (digest_string, status) = compute_digest(path_to_archive);
     if !status  {return Ok(false);}
