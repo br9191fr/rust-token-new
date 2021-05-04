@@ -1,29 +1,8 @@
-{"sms":{"message":{"sender":"Rust Demo","text":"Hello Bruno Rust test !"},"recipients":{"gsm":[{"value":"33622696747"}]}}}
-start
-Response {
-    url: Url {
-        scheme: "https",
-        username: "",
-        password: None,
-        host: Some(
-            Domain(
-                "api.smsfactor.com",
-            ),
-        ),
-        port: None,
-        path: "/send",
-        query: None,
-        fragment: None,
-    },
-    status: 200,
-    headers: {
-        "server": "nginx/1.10.3 (Ubuntu)",
-        "date": "Tue, 16 Mar 2021 12:34:28 GMT",
-        "content-type": "application/json; charset=utf-8",
-        "transfer-encoding": "chunked",
-        "connection": "keep-alive",
-        "access-control-allow-origin": "*",
-    },
+{"status": "200"}
+"status": "201"
+{ "example":
+   {"status": "202"}
+
+   "titi": 33
+   }
 }
-stop
-ok

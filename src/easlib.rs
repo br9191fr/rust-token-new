@@ -54,6 +54,9 @@ impl ArchiveTicket {
         let string = &self.archiveTicket;
         string
     }
+    fn new(archiveTicket: String) -> Self {
+        ArchiveTicket { archiveTicket }
+    }
 }
 #[derive(Deserialize,Debug)]
 pub struct EasError {
@@ -172,7 +175,6 @@ impl EasAPI {
     pub async fn eas_get_token(&mut self, display : bool) -> Result<EasResult, reqwest::Error> {
         let request_url = "https://appdev.cecurity.com/EAS.INTEGRATOR.API/service/authenticate";
         if display {println!("Start get token");}
-
         let cred_value = serde_json::to_value(&self.credentials).unwrap();
         let response = Client::new()
             .post(request_url)
@@ -191,7 +193,7 @@ impl EasAPI {
         let body = response.text().await.unwrap();
         if !sc.is_success() {
             println!("Request failed => {}",sc);
-            return Ok(check_result(body));
+            return Ok(err_to_eas_result(body));
         }
 
         if display {
@@ -220,8 +222,15 @@ impl EasAPI {
         let my_ref = LOCATIONS.lock().unwrap();
         let address = my_ref.get(address);
         let fname_ok = match address {
-            Some (f) => f,
-            _ => "/Users/bruno/dvlpt/rust/archive.txt",
+            Some (f) => {
+                println!("ok nice use f == {}",f);
+                f
+            },
+
+            _ => {
+                println!("ko use default value");
+                "/Users/bruno/dvlpt/rust/archive.txt"
+            },
         };
         if display {
             println!("digest: {}",self.digest.as_ref().unwrap().clone());
@@ -257,6 +266,7 @@ impl EasAPI {
         let response = Client::new()
             .post(request_url)
             .header("Authorization", auth_bearer)
+            .header("Accept", "application/json")
             .multipart(form)
             .send()
             .await?;
@@ -270,7 +280,7 @@ impl EasAPI {
         let body = response.text().await.unwrap();
         if !sc.is_success() {
             println!("Request failed => {}",sc);
-            return Ok(check_result(body));
+            return Ok(err_to_eas_result(body));
         }
         if display {
             println!("Status : {:#?}\n{:#?}", sc, body);
@@ -281,9 +291,15 @@ impl EasAPI {
         let a_ticket: EasResult = match r {
             Ok(res) => {
                 self.ticket = Some(res);
+                if display { println!("Body contains ticket"); }
                 EasResult::ApiOk
             },
-            Err(_e) => EasResult::None
+            Err(e) => {
+                if display {
+                    println!("Unable to deserialize body => ticket\nError {}",e);
+                };
+                EasResult::None
+            }
         };
         if display { println!("Stop post document"); }
         Ok(a_ticket)
@@ -309,7 +325,7 @@ impl EasAPI {
         let body = response.text().await.unwrap();
         if !sc.is_success() {
             println!("Request failed => {}",sc);
-            return Ok(check_result(body));
+            return Ok(err_to_eas_result(body));
         }
 
 
@@ -361,7 +377,7 @@ impl EasAPI {
         let body = response.text().await.unwrap();
         if !sc.is_success() {
             println!("Request failed => {}", sc);
-            return Ok(check_result(body));
+            return Ok(err_to_eas_result(body));
         }
         if display {
             println!("Status : {:#?}\n{:#?}", sc, body);
@@ -426,7 +442,7 @@ impl std::fmt::Display for EasMetaData {
     }
 }
 
-fn check_result(body: String) -> EasResult {
+fn err_to_eas_result(body: String) -> EasResult {
     let r: Result<EasError, Error> = serde_json::from_str(&body);
     let r_final = match r {
         Ok(res) => {

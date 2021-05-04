@@ -34,7 +34,7 @@ async fn eas_process(path_to_archive: &str, address: &str, path_to_restore: &str
     // upload document now
     let opt_at = api.eas_post_document(
         address,
-        false).await;
+        true).await;
     let (eas_r, status) = get_result_status(opt_at);
     if !status {
         println!("Failed to get archive ticket. End eas process !");
@@ -81,7 +81,7 @@ async fn main() {
     let final_result = eas_process(
     file_to_archive,
     address,
-    file_to_restore,false).await;
+    file_to_restore,true).await;
     match final_result {
         Ok(true) =>  println!("eas test is ok"),
         Ok(false) => println!("eas test failed"),
