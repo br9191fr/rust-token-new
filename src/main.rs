@@ -6,7 +6,7 @@ use easlib::{get_result_status, build_static_locations};
 use std::env;
 
 async fn eas_process(path_to_archive: &str, address: &str, path_to_restore: &str, display: bool) -> Result<bool, reqwest::Error > {
-
+    println!("Step1");
     let credentials = Credentials::new(
         "f33c398c-0f77-4351-9f92-1e20fa3fd2f8".to_owned(),
         "e1320735-e174-4150-9edb-b5daf85be6d1".to_owned(),
@@ -16,9 +16,10 @@ async fn eas_process(path_to_archive: &str, address: &str, path_to_restore: &str
     // compute digest of file
     let (digest_string, status) = compute_digest(path_to_archive);
     if !status  {return Ok(false);}
-
+    println!("Step authenticate");
     // authenticate and get token
     let opt_t = api.eas_get_token(false).await;
+    println!("Step get status");
     let (eas_r,status) = get_result_status(opt_t);
     if !status {
         println!("Failed to get token. End eas process !");
@@ -77,7 +78,7 @@ async fn main() {
     let file_to_restore = &args[2];
 
     let address = build_static_locations(file_to_archive);
-
+    //let address1 = build_static_locations1("address1".to_string(),file_to_archive);
     let final_result = eas_process(
     file_to_archive,
     address,

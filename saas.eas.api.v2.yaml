@@ -1,0 +1,1154 @@
+openapi: 3.0.1
+info:
+  title: Cecurity.com PLATFORM SAAS EAS API
+  version: 1.0.0
+  license:
+    name: Cecurity.com
+  contact:
+    email: helpdesk@cecurity.com
+    name: Support
+  description: API endpoints for the Platform EAS SAAS
+  termsOfService: 'https://www.cecurity.com'
+servers:
+  - url: 'https://app.cecurity.com/saas.eas.api'
+    description: Production
+paths:
+  /eas/a4sb/getActiveJobs:
+    post:
+      tags:
+        - a4sb
+      operationId: A4SB_GetActiveJobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoActiveJobFilter'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultActiveJobs'
+        '400':
+          description: Bad Request
+      x-codegen-request-body-name: activeJobDto
+      summary: Get active jobs in A4SB
+      description: Get active jobs in A4SB
+  /eas/a4sb/retryJob:
+    get:
+      tags:
+        - a4sb
+      operationId: A4SB_RetryJob
+      parameters:
+        - name: jobId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: OK
+      summary: Retry job in A4SB
+      description: Retry job in A4SB
+  /eas/a4sb/pauseJob:
+    get:
+      tags:
+        - a4sb
+      operationId: A4SB_PauseJob
+      parameters:
+        - name: jobId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: OK
+      summary: Pause job in A4SB
+      description: Pause job in A4SB
+  /eas/a4sb/resumeJob:
+    get:
+      tags:
+        - a4sb
+      operationId: A4SB_ResumeJob
+      parameters:
+        - name: jobId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: OK
+      summary: Resume job in A4SB
+      description: Resume job in A4SB
+  /eas/a4sb/restartJob:
+    get:
+      tags:
+        - a4sb
+      operationId: A4SB_RestartJob
+      parameters:
+        - name: jobId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: OK
+      summary: Restart job in A4SB
+      description: Restart job in A4SB
+  /eas/a4sb/deleteJob:
+    post:
+      tags:
+        - a4sb
+      operationId: A4SB_DeleteJob
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoDeleteActiveJob'
+        required: true
+      responses:
+        '200':
+          description: OK
+      x-codegen-request-body-name: deleteActiveJobDto
+      summary: Delete job in A4SB
+      description: Delete job in A4SB
+  /eas/archive/authenticate:
+    post:
+      tags:
+        - archive
+      operationId: Archive_Authenticate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoAuthenticate'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+      x-codegen-request-body-name: authenticateDto
+      summary: Authenticate user in EAS
+      description: Authenticate user in EAS
+  /eas/archive/query:
+    post:
+      tags:
+        - archive
+      operationId: Archive_Query
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoQuery'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsObject'
+      x-codegen-request-body-name: queryDto
+      summary: Query EAS
+      description: Query EAS
+  /eas/archive/queryToCsv:
+    post:
+      tags:
+        - archive
+      operationId: Archive_QueryToCsv
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoQuery'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+      x-codegen-request-body-name: queryDto
+      summary: Download CSV
+      description: Download CSV
+  /eas/archive/deleteCollections:
+    post:
+      tags:
+        - archive
+      operationId: Archive_DeleteCollections
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoDeleteCollections'
+        required: true
+      responses:
+        '200':
+          description: OK
+      x-codegen-request-body-name: deleteCollectionsDto
+      summary: Delete collections
+      description: Delete collections
+  /eas/archive/getDocument:
+    post:
+      tags:
+        - archive
+      operationId: Archive_GetDocument
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoGetDocument'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+      x-codegen-request-body-name: getDocumentDto
+      summary: Download document
+      description: Download document
+  /eas/archive/getDocuments:
+    post:
+      tags:
+        - archive
+      operationId: Archive_GetDocuments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoGetDocuments'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+      x-codegen-request-body-name: getDocumentsDto
+      summary: Download documents
+      description: Download documents
+  /eas/archive/getDocumentsAsZip:
+    post:
+      tags:
+        - archive
+      operationId: Archive_GetDocumentsAsZip
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoGetDocumentsAsZip'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+      x-codegen-request-body-name: getDocumentsAsZipDto
+      summary: Download document(s) as ZIP
+      description: Download document(s) as ZIP
+  /eas/archive/update:
+    post:
+      tags:
+        - archive
+      operationId: Archive_Update
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoUpdate'
+        required: true
+      responses:
+        '200':
+          description: OK
+      x-codegen-request-body-name: updateDto
+      summary: Update metadata
+      description: Update metadata
+  /eas/archive/massUpdate:
+    post:
+      tags:
+        - archive
+      operationId: Archive_MassUpdate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoMassUpdate'
+        required: true
+      responses:
+        '200':
+          description: OK
+      x-codegen-request-body-name: massUpdateDto
+      summary: Mass update metadata
+      description: Mass update metadata
+  /eas/archive/getSignatureInfo:
+    post:
+      tags:
+        - archive
+      operationId: Archive_GetSignatureInfo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoGetSignatureInfo'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignatureInfo'
+      x-codegen-request-body-name: getSignatureInfoDto
+      summary: Get signature info
+      description: Get signature info
+  /eas/archive/depositVip:
+    post:
+      tags:
+        - archive
+      operationId: Archive_DepositVip
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoDepositVip'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+      x-codegen-request-body-name: depositVipDto
+      summary: Deposit a VIP
+      description: Deposit a VIP
+  /eas/archive/updateDocumentTypeCustomProperties:
+    post:
+      tags:
+        - archive
+      operationId: Archive_UpdateDocumentTypeCustomProperties
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoUpdateDocumentTypeCustomProperties'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content: {}
+      x-codegen-request-body-name: body
+      summary: Update documenttype properties
+      description: Update documenttype properties
+  /eas/archive/getUpdateInfo:
+    post:
+      tags:
+        - archive
+      operationId: Archive_GetUpdateInfo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoGetUpdateInfo'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NameValuePair'
+      x-codegen-request-body-name: getUpdateInfo
+      summary: Get update info
+      description: Get update info
+  /eas/archive/addRecords:
+    post:
+      tags:
+        - archive
+      operationId: Archive_AddRecords
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoAddRecords'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content: {}
+      x-codegen-request-body-name: body
+      summary: Add metadata
+      description: Add metadata
+  /eas/archive/deleteRecords:
+    post:
+      tags:
+        - archive
+      operationId: Archive_DeleteRecords
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoDeleteRecords'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content: {}
+      x-codegen-request-body-name: body
+      summary: Delete metadata
+      description: Delete metadata
+  /eas/Attestation/query:
+    post:
+      tags:
+        - attestation
+      operationId: Attestation_Query
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoQuery'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsObject'
+      x-codegen-request-body-name: queryDto
+      summary: Query attestations
+      description: Query attestations
+  /eas/Attestation/getAttestation:
+    post:
+      tags:
+        - attestation
+      operationId: Attestation_GetAttestation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoGetAttestation'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attestation'
+      x-codegen-request-body-name: getAttestationDto
+      summary: Get a specific attestation
+      description: Get a specific attestation
+  /eas/efacture/provisioning:
+    post:
+      tags:
+        - efacture
+      operationId: EFacture_Provisioning
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoProvisioning'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultProvisioning'
+      x-codegen-request-body-name: dtoProvisioning
+      summary: Efacture provisioning
+      description: Efacture provisioning
+  /eas/efacture/importEFactureReferenceTemplate:
+    get:
+      tags:
+        - efacture
+      operationId: EFacture_ImportEFactureReferenceTemplate
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+      summary: Efacture - import reference template
+      description: Efacture - import reference template
+  /eas/epaie/provisioning:
+    post:
+      tags:
+        - epaie
+      operationId: EPaie_Provisioning
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoProvisioning'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultProvisioning'
+      x-codegen-request-body-name: dtoProvisioning
+      summary: Epaie provisioning
+      description: Epaie provisioning
+  /eas/epaie/importEPaieReferenceTemplate:
+    get:
+      tags:
+        - epaie
+      operationId: EPaie_ImportEPaieReferenceTemplate
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+      summary: Epaie - import reference template
+      description: Epaie - import reference template
+  /health:
+    get:
+      tags:
+        - health
+      operationId: Health_GetHealth
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+      summary: Get API health
+      description: Get API health
+  /eas/notification/getPlatformNotifications:
+    get:
+      tags:
+        - notification
+      operationId: Notification_GetPlatformNotifications
+      parameters:
+        - name: untilDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: retryErrors
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+      summary: Get platform notifications
+      description: Get platform notifications
+  /eas/notification/handleNotificationsInProcess:
+    put:
+      tags:
+        - notification
+      operationId: Notification_HandleNotificationsInProcess
+      responses:
+        '200':
+          description: OK
+          content: {}
+      summary: Handle notifications in process
+      description: Handle notifications in process
+  /eas/notification/resetNotificationsInError:
+    put:
+      tags:
+        - notification
+      operationId: Notification_ResetNotificationsInError
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoUpdateNotification'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content: {}
+      x-codegen-request-body-name: dtoUpdateNotification
+      summary: Handle notifications in error
+      description: Handle notifications in error
+  /eas/notification/setNotificationsFinished:
+    put:
+      tags:
+        - notification
+      operationId: Notification_SetNotificationsFinished
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoUpdateNotification'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content: {}
+      x-codegen-request-body-name: dtoUpdateNotification
+      summary: Set notifications finished
+      description: Set notifications finished
+  /eas/notification/setNotificationsInError:
+    put:
+      tags:
+        - notification
+      operationId: Notification_SetNotificationsInError
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DtoUpdateNotificationWithMessage'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content: {}
+      x-codegen-request-body-name: dtoUpdateNotificationWithMessage
+      summary: Set notifications in error
+      description: Set notifications in error
+components:
+  schemas:
+    DtoActiveJobFilter:
+      type: object
+      properties:
+        ActiveJobStatus:
+          type: string
+        Priority:
+          type: string
+        ProjectName:
+          type: string
+        CustomerKey:
+          type: string
+        CustomerName:
+          type: string
+        Solution:
+          type: string
+        Ticket:
+          type: string
+        SortField:
+          type: string
+        Ascending:
+          type: boolean
+        Page:
+          type: integer
+          format: int32
+        PageSize:
+          type: integer
+          format: int32
+    ResultActiveJobs:
+      type: object
+      properties:
+        TotalRecords:
+          type: integer
+          format: int32
+        ActiveJobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActiveJob'
+    ActiveJob:
+      type: object
+      properties:
+        JobID:
+          type: integer
+          format: int32
+        StartFile:
+          type: string
+        ProjectName:
+          type: string
+        TaskName:
+          type: string
+        ImportTime:
+          type: string
+        Ticket:
+          type: string
+        Status:
+          type: string
+        Client:
+          type: string
+        Priority:
+          type: string
+        CustomerKey:
+          type: string
+        CustomerName:
+          type: string
+        Solution:
+          type: string
+        ProcessMessage:
+          type: string
+    DtoDeleteActiveJob:
+      type: object
+      properties:
+        JobId:
+          type: integer
+          format: int32
+        Motivation:
+          type: string
+    DtoAuthenticate:
+      type: object
+      properties:
+        DomainName:
+          type: string
+        UserName:
+          type: string
+        Password:
+          type: string
+    AuthToken:
+      type: object
+      properties:
+        DomainName:
+          type: string
+        Token:
+          type: string
+    DtoQuery:
+      type: object
+      properties:
+        AuthToken:
+          $ref: '#/components/schemas/AuthToken'
+        Page:
+          type: integer
+          format: int32
+        PageSize:
+          type: integer
+          format: int32
+        DocumentType:
+          type: string
+        QueryFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryField'
+        SortField:
+          type: string
+        SortDescending:
+          type: boolean
+    QueryField:
+      type: object
+      properties:
+        Name:
+          type: string
+        Value:
+          type: string
+    ResultsObject:
+      type: object
+      properties:
+        PageSize:
+          type: integer
+          format: int32
+        CurrentPage:
+          type: integer
+          format: int32
+        TotalRecords:
+          type: integer
+          format: int32
+        Data:
+          type: string
+    Document:
+      type: object
+      properties:
+        Base64Doc:
+          type: string
+        MimeType:
+          type: string
+        OriginalFileName:
+          type: string
+    DtoDeleteCollections:
+      type: object
+      properties:
+        DomainName:
+          type: string
+        DocumentType:
+          type: string
+        RecordRefs:
+          type: array
+          items:
+            type: string
+    DtoGetDocument:
+      type: object
+      properties:
+        AuthToken:
+          $ref: '#/components/schemas/AuthToken'
+        RecordRef:
+          type: string
+    DtoGetDocuments:
+      type: object
+      properties:
+        AuthToken:
+          $ref: '#/components/schemas/AuthToken'
+        RecordRefs:
+          type: array
+          items:
+            type: string
+    DtoGetDocumentsAsZip:
+      type: object
+      properties:
+        AuthToken:
+          $ref: '#/components/schemas/AuthToken'
+        DocumentList:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentList'
+    DocumentList:
+      type: object
+      properties:
+        FileName:
+          type: string
+        RecordRef:
+          type: string
+    DtoUpdate:
+      type: object
+      properties:
+        AuthToken:
+          $ref: '#/components/schemas/AuthToken'
+        UpdateFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryField'
+        RecordRefs:
+          type: array
+          items:
+            type: string
+    DtoMassUpdate:
+      type: object
+      properties:
+        AuthToken:
+          $ref: '#/components/schemas/AuthToken'
+        DocumentType:
+          type: string
+        QueryFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryField'
+        UpdateFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryField'
+    DtoGetSignatureInfo:
+      type: object
+      properties:
+        AuthToken:
+          $ref: '#/components/schemas/AuthToken'
+        RecordRef:
+          type: string
+    SignatureInfo:
+      type: object
+      properties:
+        Signer:
+          type: string
+        CertificateSerialNumber:
+          type: string
+        CertificateEndDate:
+          type: string
+        SigningTime:
+          type: string
+        VerificationTime:
+          type: string
+        FingerprintSHA1:
+          type: string
+        FingerprintSHA256:
+          type: string
+        Integrity:
+          type: string
+        Revocation:
+          type: string
+        IssuerTo:
+          type: string
+        IssuerBy:
+          type: string
+        Exception:
+          type: string
+    DtoDepositVip:
+      type: object
+      properties:
+        AuthToken:
+          $ref: '#/components/schemas/AuthToken'
+        DocumentType:
+          type: string
+        Base64EncodedFile:
+          type: string
+        FileName:
+          type: string
+        Indexes:
+          type: array
+          items:
+            $ref: '#/components/schemas/NameValuePair'
+    NameValuePair:
+      type: object
+      properties:
+        Name:
+          type: string
+        Value:
+          type: string
+    DtoUpdateDocumentTypeCustomProperties:
+      type: object
+      properties:
+        AuthToken:
+          $ref: '#/components/schemas/AuthToken'
+        DocumentType:
+          type: string
+        CustomProperties:
+          type: array
+          items:
+            $ref: '#/components/schemas/NameValuePair'
+    DtoGetUpdateInfo:
+      type: object
+      properties:
+        AuthToken:
+          $ref: '#/components/schemas/AuthToken'
+        RecordRef:
+          type: string
+    DtoAddRecords:
+      type: object
+      properties:
+        AuthToken:
+          $ref: '#/components/schemas/AuthToken'
+        Records:
+          type: array
+          items:
+            $ref: '#/components/schemas/AddRecord'
+    AddRecord:
+      type: object
+      properties:
+        RecordRef:
+          type: string
+        Values:
+          type: array
+          items:
+            $ref: '#/components/schemas/NameValuePair'
+    DtoDeleteRecords:
+      type: object
+      properties:
+        AuthToken:
+          $ref: '#/components/schemas/AuthToken'
+        RecordRefs:
+          type: array
+          items:
+            type: string
+        Motivation:
+          type: string
+    DtoGetAttestation:
+      type: object
+      properties:
+        AuthToken:
+          $ref: '#/components/schemas/AuthToken'
+        RecordRef:
+          type: string
+        Documenttype:
+          type: string
+        AttestationFormat:
+          type: integer
+          format: int32
+          enum:
+            - 0
+            - 1
+            - 2
+    Attestation:
+      type: object
+      properties:
+        Base64Doc:
+          type: string
+        MimeType:
+          type: string
+        OriginalFileName:
+          type: string
+        CreationDate:
+          type: string
+        RetentionStartDate:
+          type: string
+        RetentionEndDate:
+          type: string
+        ArchiveTicket:
+          type: string
+    DtoProvisioning:
+      type: object
+      properties:
+        ReferenceId:
+          type: string
+        ArchiveOwner:
+          type: string
+    ResultProvisioning:
+      type: object
+      properties:
+        DomainName:
+          type: string
+        DocType:
+          type: string
+        UserName:
+          type: string
+        Password:
+          type: string
+        CustomerCode:
+          type: string
+        CustomerName:
+          type: string
+        ArchiveOwner:
+          type: string
+    Health:
+      type: object
+      properties:
+        Entries:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/HealthEntry'
+        Status:
+          type: integer
+          format: int64
+        TotalDuration:
+          type: string
+    HealthEntry:
+      type: object
+      properties:
+        Data:
+          $ref: '#/components/schemas/Data'
+        Description:
+          type: object
+          properties: {}
+        Duration:
+          type: string
+        Exception:
+          type: string
+        Status:
+          type: integer
+          format: int64
+        Tags:
+          type: array
+          items:
+            type: object
+            properties: {}
+    Data:
+      type: object
+    Notification:
+      type: object
+      properties:
+        NotificationID:
+          type: string
+          readOnly: true
+        DomainName:
+          type: string
+          readOnly: true
+        DocumentTypeName:
+          type: string
+          readOnly: true
+        Notifier:
+          type: string
+          readOnly: true
+        NotifyBy:
+          type: string
+          readOnly: true
+        NotifyAddress:
+          type: string
+          readOnly: true
+        NotifyProps:
+          type: object
+          additionalProperties:
+            type: string
+          readOnly: true
+        Action:
+          type: integer
+          format: int32
+          readOnly: true
+          enum:
+            - 0
+            - 1
+        ActionInfo:
+          type: object
+          additionalProperties:
+            type: string
+          readOnly: true
+        State:
+          type: integer
+          format: int32
+          readOnly: true
+          enum:
+            - 0
+            - 1
+            - 2
+            - -1
+        StateMessage:
+          type: string
+          readOnly: true
+        CreationDate:
+          type: string
+          format: date-time
+          readOnly: true
+        LastModifiedDate:
+          type: string
+          format: date-time
+          readOnly: true
+        Retries:
+          type: integer
+          format: int32
+          readOnly: true
+    DtoUpdateNotification:
+      required:
+        - notificationIds
+      type: object
+      properties:
+        notificationIds:
+          type: array
+          items:
+            type: string
+    DtoUpdateNotificationWithMessage:
+      required:
+        - notificationIds
+      type: object
+      properties:
+        notificationStateMessage:
+          type: string
+        notificationIds:
+          type: array
+          items:
+            type: string
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+    hmac:
+      type: http
+      scheme: bearer
+      description: ''
+tags:
+  - name: a4sb
+    description: A4SB
+  - name: archive
+    description: Archive
+  - name: attestation
+    description: Attestation
+  - name: epaie
+    description: EPaie
+  - name: efacture
+    description: EFacture
+  - name: notification
+    description: Notification
+  - name: health
+    description: Health

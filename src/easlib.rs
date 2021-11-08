@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::collections::HashMap;
 
 use std::fmt;
@@ -223,7 +224,7 @@ impl EasAPI {
         let address = my_ref.get(address);
         let fname_ok = match address {
             Some (f) => {
-                println!("ok nice use f == {}",f);
+                if display {println!("ok nice use f == {}",f);}
                 f
             },
 
@@ -462,6 +463,15 @@ pub fn build_static_locations(file_to_archive: &String) -> &str {
     locations.insert(address, string_to_static_str(file_to_archive.to_string()));
     return address;
 }
+/*
+pub fn build_static_locations1<'a> (w: &'a String, file_to_archive: &String) -> &'a str {
+    let ad_where = w.as_str();
+    let mut locations = LOCATIONS.lock().unwrap();
+    locations.insert(ad_where, string_to_static_str(file_to_archive.to_string()));
+    return ad_where;
+}
+*/
+
 pub fn get_inner_token(e : EasResult) -> Option<String> {
     match e {
         EasResult::Token  (t)  => Some(t.get_token().to_string()),
@@ -522,10 +532,17 @@ fn string_to_static_str(s: String) -> &'static str {
 lazy_static! {
     static ref LOCATIONS: Mutex<HashMap<&'static str, &'static str>> =
     Mutex::new(generate_static_locations());
+    static ref LOCATIONS2: Mutex<HashMap<i32, &'static str>> =
+    Mutex::new(generate_static_locations2());
 }
 fn generate_static_locations() -> HashMap<&'static str, &'static str> {
     let mut m = HashMap::new();
     m.insert("default_location", "/Users/bruno/dvlpt/rust/archive.txt");
+    m
+}
+fn generate_static_locations2() -> HashMap<i32, &'static str> {
+    let mut  m = HashMap::new();
+    m.insert(0, "data0");
     m
 }
 pub fn compute_digest(path: & str) -> (String,bool) {
