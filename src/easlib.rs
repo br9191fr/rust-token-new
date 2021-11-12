@@ -1,4 +1,7 @@
 #![allow(dead_code)]
+
+mod lib;
+
 use std::collections::HashMap;
 
 use std::fmt;
@@ -214,15 +217,30 @@ impl EasAPI {
         if display { println!("stop get token"); }
         Ok(t)
     }
-    pub async fn eas_post_document(&mut self, address: &str, display: bool) -> Result<EasResult, Box<dyn std::error::Error>>  {
+    // TODO use only one address address (string)  or address1 (integer)
+    pub async fn eas_post_document(&mut self, address: &str, address1: i32, display: bool) -> Result<EasResult, Box<dyn std::error::Error>>  {
         let request_url = "https://appdev.cecurity.com/EAS.INTEGRATOR.API/eas/documents";
         if display { println!("Start post document"); }
         let auth_bearer = format!("Bearer {}", self.get_token_string());
         //let f1 : &str;
         // TODO Use default location if actual location is unknown
+        // TODO choose between sync and async version
         let my_ref = LOCATIONS.lock().unwrap();
+        let my_ref1 = LOCATIONS2.lock().unwrap();
         let address = my_ref.get(address);
+        let address1 = my_ref1.get(&address1);
         let fname_ok = match address {
+            Some (f) => {
+                if display {println!("ok nice use f == {}",f);}
+                f
+            },
+
+            _ => {
+                println!("ko use default value");
+                "/Users/bruno/dvlpt/rust/archive.txt"
+            },
+        };
+        let fname_ok1 = match address1 {
             Some (f) => {
                 if display {println!("ok nice use f == {}",f);}
                 f
@@ -237,11 +255,12 @@ impl EasAPI {
             println!("digest: {}",self.digest.as_ref().unwrap().clone());
         }
         // async version
-        let path = Path::new(fname_ok);
-        let file = Tokio_File::open(path).await?;
+        let _path_old = Path::new(fname_ok);
+        let path_ok = Path::new(fname_ok1);
+        let file = Tokio_File::open(path_ok).await?;
         let stream = FramedRead::new(file, BytesCodec::new());
         let _file_part = reqwest::multipart::Part::stream(Body::wrap_stream(stream))
-            .file_name(path.file_name().unwrap().to_string_lossy())
+            .file_name(path_ok.file_name().unwrap().to_string_lossy())
             .mime_str("application/octet-stream")?;
         // sync version
         let mut buffer = Vec::new();
@@ -463,14 +482,14 @@ pub fn build_static_locations(file_to_archive: &String) -> &str {
     locations.insert(address, string_to_static_str(file_to_archive.to_string()));
     return address;
 }
-/*
-pub fn build_static_locations1<'a> (w: &'a String, file_to_archive: &String) -> &'a str {
-    let ad_where = w.as_str();
-    let mut locations = LOCATIONS.lock().unwrap();
+
+pub fn build_static_locations1 (w: i32, file_to_archive: &String) -> i32 {
+    let ad_where = w;
+    let mut locations = LOCATIONS2.lock().unwrap();
     locations.insert(ad_where, string_to_static_str(file_to_archive.to_string()));
     return ad_where;
 }
-*/
+
 
 pub fn get_inner_token(e : EasResult) -> Option<String> {
     match e {
@@ -532,6 +551,8 @@ fn string_to_static_str(s: String) -> &'static str {
 lazy_static! {
     static ref LOCATIONS: Mutex<HashMap<&'static str, &'static str>> =
     Mutex::new(generate_static_locations());
+    }
+lazy_static! {
     static ref LOCATIONS2: Mutex<HashMap<i32, &'static str>> =
     Mutex::new(generate_static_locations2());
 }

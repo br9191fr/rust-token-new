@@ -6,26 +6,44 @@ use std::sync::Mutex;
 fn string_to_static_str(s: String) -> &'static str {
     Box::leak(s.into_boxed_str())
 }
+
 lazy_static! {
-    static ref LOCATIONS: Mutex<HashMap<&'static str, &'static str>> =
+    static ref LOCATIONS: Mutex<HashMap<usize, &'static str>> =
     Mutex::new(generate_static_locations());
 }
-fn generate_static_locations() -> HashMap<&'static str, &'static str> {
+fn generate_static_locations() -> HashMap<usize, &'static str> {
     let mut m = HashMap::new();
-    m.insert("default_location", "/Users/bruno/dvlpt/rust/archive.txt");
+    m.insert(0, "default value");
     m
 }
+
 #[tokio::main]
 async fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() < 1 {
+    if args.len() < 2 {
         println!("Missing arguments\nUsage: Static_ref filename");
         return;
     }
-    let filename = &args[1];
-    {
-        let mut locations = LOCATIONS.lock().unwrap();
-        locations.insert("address1","/Users/bruno/dvlpt/rust/archive.txt");
-        locations.insert("address2",string_to_static_str(filename.to_string()));
+    let mut k = 0;
+    let mut locations = LOCATIONS.lock().unwrap();
+    let mut k = 0;
+    for st in &args {
+        if (k > 0) {
+            locations.insert(k, string_to_static_str(st.to_string()));
+            println!("Insert {} at position {}", &st, k);
+        }
+        k += 1;
+    }
+    println!(" insert OK");
+    let my_ref = locations;
+    for k in 0..args.len() {
+        let _add_ok = match my_ref.get(&k) {
+            Some(f) => {
+                println!("At {} => {}",k, f);
+            }
+            _ => {
+                println!("{} => Bad Address",k);
+            }
+        };
     }
 }

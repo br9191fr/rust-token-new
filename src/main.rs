@@ -1,11 +1,11 @@
 extern crate easlib;
 
 use easlib::{compute_digest, EasAPI, Credentials};
-use easlib::{get_result_status, build_static_locations};
+use easlib::{get_result_status, build_static_locations, build_static_locations1};
 
 use std::env;
-
-async fn eas_process(path_to_archive: &str, address: &str, path_to_restore: &str, display: bool) -> Result<bool, reqwest::Error > {
+// Result <bool, reqwest::Error >
+async fn eas_process(path_to_archive: &str, address: &str, address1: i32,path_to_restore: &str, display: bool) ->  Result <bool, reqwest::Error > {
     println!("Step1");
     let credentials = Credentials::new(
         "f33c398c-0f77-4351-9f92-1e20fa3fd2f8".to_owned(),
@@ -35,6 +35,7 @@ async fn eas_process(path_to_archive: &str, address: &str, path_to_restore: &str
     // upload document now
     let opt_at = api.eas_post_document(
         address,
+        address1,
         true).await;
     let (eas_r, status) = get_result_status(opt_at);
     if !status {
@@ -76,12 +77,14 @@ async fn main() {
     }
     let file_to_archive = &args[1];
     let file_to_restore = &args[2];
-
+    // TODO choose between two options (address or address1).
+    // TODO in upload with multiple file 2nd option must be selected
     let address = build_static_locations(file_to_archive);
-    //let address1 = build_static_locations1("address1".to_string(),file_to_archive);
+    let address1 = build_static_locations1(1,file_to_archive);
     let final_result = eas_process(
     file_to_archive,
     address,
+    address1,
     file_to_restore,true).await;
     match final_result {
         Ok(true) =>  println!("eas test is ok"),
