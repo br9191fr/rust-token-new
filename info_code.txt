@@ -1,0 +1,17 @@
+        // sync version
+
+        // TODO choose most appropriate part :
+        // async => file_part
+        // sync  => file_part1
+
+        /*
+        let mut buffer = Vec::new();
+        let path1 = Path::new(fname_ok);
+        let mut file1 = File::open(path1).unwrap();
+        let _file_content_length = file1.read_to_end(&mut buffer);
+        let file_content = str::from_utf8(&*buffer).unwrap().to_string();
+        let file_part1 = reqwest::multipart::Part::text(file_content)
+            .file_name(path1.file_name().unwrap().to_string_lossy())
+            .mime_str("application/octet-stream").unwrap();
+         */
+
