@@ -322,8 +322,26 @@ impl EasAPI {
         ]);
         //             .text("fingerPrint",self.digest.as_ref().unwrap().clone())
         //             .text("fingerprintAlgorithm","SHA-256")
+        // sync version for first file
+        let mut buffer = Vec::new();
+        let path1 = Path::new(fname);
+        let mut file1 = File::open(path1).unwrap();
+        let _fcl = file1.read_to_end(&mut buffer);
+        let file_content = str::from_utf8(&*buffer).unwrap().to_string();
+        let file_part_sync = reqwest::multipart::Part::text(file_content)
+            .file_name(path1.file_name().unwrap().to_string_lossy())
+            .mime_str("application/octet-stream").unwrap();
+        // sync version for second file
+        let path1 = Path::new("/users/bruno/dvlpt/rust/archive1.txt");
+        let mut file1 = File::open(path1).unwrap();
+        let _fcl = file1.read_to_end(&mut buffer);
+        let file_content = str::from_utf8(&*buffer).unwrap().to_string();
+        let file_part_sync2 = reqwest::multipart::Part::text(file_content)
+            .file_name(path1.file_name().unwrap().to_string_lossy())
+            .mime_str("application/octet-stream").unwrap();
         let form = Form::new()
-            .part("document", file_part2)
+            .part("document", file_part_sync)
+            .part("document", file_part_sync2)
             .text("metadata", meta.to_string());
             //.text("fingerPrints", upload_file_fingerprint.to_string());
             // .part("document", file_part2)
@@ -335,9 +353,9 @@ impl EasAPI {
             .send()
             .await?;
         let sc = response.status();
-
+        let display2 = false;
         println!("Status code {} => {} {}",sc.as_u16() , sc.is_success(),sc.is_client_error());
-        if display {
+        if display2 {
             let headers = response.headers();
             for (key, value) in headers.iter() {
                 println!("{:?}: {:?}", key, value);

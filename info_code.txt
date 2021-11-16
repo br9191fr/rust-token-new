@@ -15,3 +15,11 @@
             .mime_str("application/octet-stream").unwrap();
          */
 
+        // async version
+        let _path_old = Path::new(fname_ok);
+        let path_ok = Path::new(fname_ok1);
+        let file = Tokio_File::open(path_ok).await?;
+        let stream = FramedRead::new(file, BytesCodec::new());
+        let _file_part = reqwest::multipart::Part::stream(Body::wrap_stream(stream))
+            .file_name(path_ok.file_name().unwrap().to_string_lossy())
+            .mime_str("application/octet-stream")?;
