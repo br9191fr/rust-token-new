@@ -23,3 +23,36 @@
         let _file_part = reqwest::multipart::Part::stream(Body::wrap_stream(stream))
             .file_name(path_ok.file_name().unwrap().to_string_lossy())
             .mime_str("application/octet-stream")?;
+
+   let metadata_json = "{ \"file_owner\": \"bob smith\" }";
+   let metadata_part = reqwest::multipart::Part::text(metadata_json);
+
+   let read_stream : Stream<Item = std::io::Result<Vec<u8>> = my_file_stream;
+   // Voir quelle méthode utiliser
+   let stream_part = reqwest::multipart::Part::stream(read_stream);
+   let stream_part = reqwest::multipart::Part::stream(Body::wrap_stream(read_stream));
+
+   let multipart_form = reqwest::multipart::Form::new()
+     .part("metadata", metadata_part)
+     .part("file", stream_part);
+
+
+Voir cette url : https://www.reddit.com/r/rust/comments/i4n9mp/how_to_upload_a_file_using_reqwest_but_streaming/
+
+
+For uploading the file in one shot I am using FramedRead
+
+let file = File::open(file_path).await?;
+let stream = FramedRead::new(file, BytesCodec::new());
+let body = Body::wrap_stream(stream);
+client.request(method, url).headers(headers).body(body)
+
+use tokio::fs::File;
+use tokio::io::AsyncReadExt;
+
+let mut file = File::open("foo.txt").await?;
+
+let mut contents = vec![];
+file.read_to_end(&mut contents).await?;
+
+println!("len = {}", contents.len());

@@ -38,10 +38,28 @@ async fn eas_process(address: i32,path_to_restore: &str, display: bool) ->  Resu
         return Ok(false);
     }
     eas_r.show("Upload Doc");
+    let opt_cl = api.eas_get_content_list(true).await;
+    let (eas_r, status) = get_result_status(opt_cl);
 
-    // get matching documents
+    if !status {
+        println!("Failed to get content list. End eas process !");
+        return Ok(false);
+    }
+    eas_r.show("Content list");
 
-    // download document
+    // TODO get contentList with /eas/documents/{ticket}/contentList
+
+    // TODO download individual file with POST to /eas/documents/{ticket}/fileName
+    // TODO filename in requestBody (schema downloadItemRequest)
+
+    // TODO play with metadata with /eas/documents/{ticket}/metadata
+    // TODO use get/post/patch http commands
+
+    // TODO get matching documents
+
+    // TODO download document
+    // TODO Errors found => need corrections
+    /*
     let opt_d = api.eas_download_document(
         path_to_restore.clone().to_string(),
         false).await;
@@ -60,6 +78,7 @@ async fn eas_process(address: i32,path_to_restore: &str, display: bool) ->  Resu
         return Ok(false);
     }
     eas_r.show("Get Metadata");
+    */
     return Ok(true);
 }
 
@@ -72,8 +91,7 @@ async fn main() {
     }
     let file_to_archive = &args[1];
     let file_to_restore = &args[2];
-    // TODO choose between two options (address or address1).
-    // TODO in upload with multiple file 2nd option must be selected
+
     let address = build_static_locations(1,file_to_archive);
     let test = true;
     if test {

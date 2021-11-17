@@ -20,6 +20,7 @@ use ring::digest::{Context, Digest, SHA256};
 use serde_json::{json, Error};
 use serde::{Deserialize, Serialize};
 use tokio::fs::File as Tokio_File;
+use tokio::io::{self, AsyncReadExt};
 use tokio_util::codec::{BytesCodec, FramedRead};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -181,6 +182,10 @@ impl EasDocument {
         }
     }
 }
+#[derive(Deserialize, Debug)]
+pub struct EasContentList {
+    content: String,
+}
 
 pub struct EasAPI {
     credentials: Credentials,
@@ -262,7 +267,28 @@ impl EasAPI {
         if display { println!("stop get token"); }
         Ok(t)
     }
-
+    // TODO add function to check result
+    pub async fn file_as_part(&self, address: i32, mime_type : &str) -> Result<reqwest::multipart::Part, Box<dyn std::error::Error>> {
+        let my_ref1 = LOCATIONS.lock().unwrap();
+        let address = my_ref1.get(&address);
+        let fname = match address {
+            Some(f) => {
+                f
+            }
+            _ => {
+                "/Users/bruno/dvlpt/rust/archive.txt"
+            }
+        };
+        let mut async_buffer = Vec::new();
+        let path = Path::new(fname);
+        let mut file = Tokio_File::open(path).await?;
+        let _fcl = file.read_to_end(&mut async_buffer).await?;
+        let file_content = str::from_utf8(&*async_buffer).unwrap().to_string();
+        let file_part = reqwest::multipart::Part::text(file_content)
+            .file_name(path.file_name().unwrap().to_string_lossy())
+            .mime_str(mime_type).unwrap();
+        Ok(file_part)
+    }
     pub async fn eas_post_document(&mut self, address: i32, display: bool) -> Result<EasResult, Box<dyn std::error::Error>> {
         let request_url = "https://apprec.cecurity.com/eas.integrator.api/eas/documents";
         let request_url2 = "https://enkzri5ybwfri60.m.pipedream.net";
@@ -271,8 +297,8 @@ impl EasAPI {
 
         // compute digest of file 1
         let my_ref1 = LOCATIONS.lock().unwrap();
-        let address = my_ref1.get(&address);
-        let fname = match address {
+        let address_str = my_ref1.get(&address);
+        let fname = match address_str {
             Some(f) => {
                 if display { println!("ok nice use f == {}", f); }
                 f
@@ -297,54 +323,46 @@ impl EasAPI {
         if display {
             println!("SHA256 Digest for {} is {}", "/users/bruno/dvlpt/rust/archive1.txt", digest_string2);
         }
-        let path = Path::new(fname);
-        let file = Tokio_File::open(path).await?;
-        let stream = FramedRead::new(file, BytesCodec::new());
-        let file_part = reqwest::multipart::Part::stream(Body::wrap_stream(stream))
-            .file_name(path.file_name().unwrap().to_string_lossy())
-            .mime_str("application/octet-stream")?;
-        let path2 = Path::new("/users/bruno/dvlpt/rust/archive1.txt");
-        let file2 = Tokio_File::open(path2).await?;
-        let stream2 = FramedRead::new(file2, BytesCodec::new());
-        let file_part2 = reqwest::multipart::Part::stream(Body::wrap_stream(stream2))
-            .file_name(path2.file_name().unwrap().to_string_lossy())
-            .mime_str("application/octet-stream")?;
-        println!("part : {:?}", file_part);
-        println!("part2 : {:?}", file_part2);
+
         let meta = json!([
             {"name": "ClientId", "value": "123456789"},
             {"name": "CustomerId", "value": "AZER456"},
             {"name": "Documenttype", "value": "Incoming invoice"}]);
 
         let upload_file_fingerprint = json!([
-            {"fileName": fname, "value" : digest_string.clone(),"fingerPrintAlgorithm": "SHA256"},
-            {"fileName": "/users/bruno/dvlpt/rust/archive1.txt", "value" : digest_string2.clone(),"fingerPrintAlgorithm" : "SHA256"}
+            {"fileName": fname, "value" : digest_string.clone(),"fingerPrintAlgorithm": "SHA-256"},
+            {"fileName": "/users/bruno/dvlpt/rust/archive1.txt", "value" : digest_string2.clone(),"fingerPrintAlgorithm" : "SHA-256"}
         ]);
         //             .text("fingerPrint",self.digest.as_ref().unwrap().clone())
         //             .text("fingerprintAlgorithm","SHA-256")
-        // sync version for first file
-        let mut buffer = Vec::new();
-        let path1 = Path::new(fname);
-        let mut file1 = File::open(path1).unwrap();
-        let _fcl = file1.read_to_end(&mut buffer);
-        let file_content = str::from_utf8(&*buffer).unwrap().to_string();
-        let file_part_sync = reqwest::multipart::Part::text(file_content)
-            .file_name(path1.file_name().unwrap().to_string_lossy())
+        //let file_part_async = self.file_as_part(address,"application/octet-stream").await;
+
+        // part for first file
+        let mut async_buffer = Vec::new();
+        let path = Path::new(fname);
+        let mut file = Tokio_File::open(path).await?;
+        let _fcl = file.read_to_end(&mut async_buffer).await?;
+        let file_content = str::from_utf8(&*async_buffer).unwrap().to_string();
+        let file_part_async = reqwest::multipart::Part::text(file_content)
+            .file_name(path.file_name().unwrap().to_string_lossy())
             .mime_str("application/octet-stream").unwrap();
-        // sync version for second file
+
+        // part for second file
+        let mut sync_buffer = Vec::new();
         let path1 = Path::new("/users/bruno/dvlpt/rust/archive1.txt");
         let mut file1 = File::open(path1).unwrap();
-        let _fcl = file1.read_to_end(&mut buffer);
-        let file_content = str::from_utf8(&*buffer).unwrap().to_string();
+        let _fcl = file1.read_to_end(&mut sync_buffer);
+        let file_content = str::from_utf8(&*sync_buffer).unwrap().to_string();
         let file_part_sync2 = reqwest::multipart::Part::text(file_content)
             .file_name(path1.file_name().unwrap().to_string_lossy())
             .mime_str("application/octet-stream").unwrap();
+
         let form = Form::new()
-            .part("document", file_part_sync)
+            .part("document", file_part_async)
             .part("document", file_part_sync2)
-            .text("metadata", meta.to_string());
-            //.text("fingerPrints", upload_file_fingerprint.to_string());
-            // .part("document", file_part2)
+            .text("metadata", meta.to_string())
+            .text("fingerPrints", upload_file_fingerprint.to_string());
+
         let response = Client::new()
             .post(request_url)
             .header("Authorization", auth_bearer)
@@ -402,6 +420,38 @@ impl EasAPI {
         };
         if display { println!("Stop post document"); }
         Ok(a_ticket)
+    }
+    pub async fn eas_get_content_list(&self,display: bool) -> Result<EasResult, reqwest::Error> {
+        let request_url = format!("https://apprec.cecurity.com/eas.integrator.api/eas/documents/{}/contentList",self.get_ticket_string());
+        if display { println!("Start download document"); }
+        let auth_bearer = format!("Bearer {}", self.get_token_string());
+
+        let response = Client::new()
+            .get(request_url)
+            .header("Accept", "application/json")
+            .header("Authorization", auth_bearer)
+            .send().await?;
+        let sc = response.status();
+        if display {
+            let headers = response.headers();
+            for (key, value) in headers.iter() {
+                println!("{:?}: {:?}", key, value);
+            }
+        }
+        let body = response.text().await.unwrap();
+        if !sc.is_success() {
+            println!("Request failed => {}", sc);
+            return Ok(err_to_eas_result(body));
+        }
+        if display {
+            println!("Status : {:#?}\n{:#?}", sc, body);
+        }
+        let r: Result<EasDocument, Error> = serde_json::from_str(&body);
+        let eas_r: EasResult = match r {
+            Ok(res) => EasResult::EasDocument(res),
+            Err(_e) => EasResult::None
+        };
+        Ok(EasResult::None)
     }
     pub async fn eas_download_document(&self, file_to_restore: String, display: bool) -> Result<EasResult, reqwest::Error> {
         let request_url = format!("{}/{}", "https://apprec.cecurity.com/eas.integrator.api/eas/documents", self.get_ticket_string());

@@ -1,0 +1,389 @@
+openapi: 3.0.0
+info:
+  title: Cecurity.com EAS Integrators API
+  version: 2.0.1
+  license:
+    name: Cecurity.com
+  contact:
+    email: helpdesk@cecurity.com
+    name: Support
+  description: API endpoints for the EAS Integrators
+  termsOfService: 'https://www.cecurity.com'
+servers:
+  - url: 'https://argusapp.cecurity.com/eas.integrator.api'
+    description: Production
+paths:
+  /service/authenticate:
+    post:
+      summary: Authenticate
+      operationId: Authenticate
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/authenticationResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        '401':
+          description: Unauthorized
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/authenticationRequest'
+            examples: {}
+        description: Authentication request
+      description: Authenticate
+      tags:
+        - service
+    parameters: []
+  /eas/documents:
+    post:
+      summary: Upload document
+      operationId: UploadDocument
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/uploadResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        '401':
+          description: Unauthorized
+      description: Upload document
+      parameters: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/uploadRequest'
+      security:
+        - Authorization: []
+      tags:
+        - consult
+    get:
+      summary: Get matching documents
+      operationId: GetDocuments
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/documentsQueryResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        '401':
+          description: Unauthorized
+      security:
+        - Authorization: []
+      parameters:
+        - schema:
+            type: integer
+          in: query
+          name: pageNumber
+        - schema:
+            type: integer
+          in: query
+          name: pageSize
+        - schema:
+            type: string
+          in: query
+          name: filter
+        - schema:
+            type: string
+          in: query
+          name: sortBy
+        - schema:
+            type: string
+          in: query
+          name: fields
+      description: Get matching documents
+      tags:
+        - consult
+    parameters: []
+  '/eas/documents/{ticket}':
+    parameters:
+      - schema:
+          type: string
+        name: ticket
+        in: path
+        required: true
+    get:
+      summary: Download document
+      tags:
+        - consult
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/documentResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+      operationId: DownloaDocument
+      description: Download document
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: fileName
+      security:
+        - Authorization: []
+    delete:
+      summary: Delete document
+      operationId: DeleteDocument
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+      description: Delete document
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: motivation
+          required: true
+      security:
+        - Authorization: []
+      tags:
+        - consult
+  '/eas/documents/{ticket}/metadata':
+    parameters:
+      - schema:
+          type: string
+        name: ticket
+        in: path
+        required: true
+    get:
+      summary: Get documents metadata
+      tags:
+        - consult
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/metadataResponse'
+              examples: {}
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+      operationId: GetMetadata
+      description: Get documents metadata
+      parameters: []
+      security:
+        - Authorization: []
+    patch:
+      summary: Update documents metadata
+      operationId: UpdateMetadata
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        '404':
+          description: Not Found
+      description: Update the documents metadata
+      security:
+        - Authorization: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/metadataResponse'
+            examples: {}
+      tags:
+        - consult
+  '/eas/documents/{ticket}/contentList':
+    parameters:
+      - schema:
+          type: string
+        name: ticket
+        in: path
+        required: true
+    get:
+      summary: Get content of an archived object
+      tags:
+        - consult
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        '404':
+          description: Not Found
+      operationId: GetArchivedObjectContentList
+      description: Get content of an archived object
+      security:
+        - Authorization: []
+components:
+  schemas:
+    nameValuePair:
+      title: nameValuePair
+      type: object
+      properties:
+        name:
+          type: string
+        value:
+          type: string
+    authenticationResponse:
+      title: authenticationResponse
+      type: object
+      properties:
+        token:
+          type: string
+    documentResponse:
+      title: documentResponse
+      type: object
+      properties:
+        mimeType:
+          type: string
+        base64Document:
+          type: string
+    documentsQueryResponse:
+      title: documentsQueryResponse
+      type: object
+      properties:
+        data:
+          type: object
+        pageNumber:
+          type: integer
+        pageSize:
+          type: integer
+        totalPages:
+          type: integer
+        totalRecords:
+          type: integer
+    errorResponse:
+      title: errorResponse
+      type: object
+      properties:
+        errorCode:
+          type: string
+        errorMessage:
+          type: string
+        status:
+          type: string
+    metadataResponse:
+      title: metadataResponse
+      type: object
+      properties:
+        metadata:
+          type: array
+          items:
+            $ref: '#/components/schemas/nameValuePair'
+    uploadResponse:
+      title: uploadResponse
+      type: object
+      properties:
+        ticket:
+          type: string
+    authenticationRequest:
+      title: authenticationRequest
+      type: object
+      properties:
+        appId:
+          type: string
+        appToken:
+          type: string
+        accountName:
+          type: string
+    uploadRequest:
+      title: uploadRequest
+      type: object
+      properties:
+        fingerPrint:
+          type: string
+        fingerprintAlgorithm:
+          type: string
+        document:
+          type: array
+          items:
+            type: string
+            format: binary
+        metadata:
+          type: array
+          items:
+            $ref: '#/components/schemas/nameValuePair'
+        fingerPrints:
+          type: array
+          items:
+            $ref: '#/components/schemas/uploadFileFingerprint'
+      required:
+        - document
+    uploadFileFingerprint:
+      title: uploadFileFingerprint
+      type: object
+      properties:
+        fileName:
+          type: string
+        fingerPrint:
+          type: string
+        fingerPrintAlgorithm:
+          type: string
+  securitySchemes:
+    Authorization:
+      type: http
+      scheme: bearer
+tags:
+  - name: service
+    description: service
+  - name: consult
+    description: consult
