@@ -31,14 +31,14 @@ async fn eas_process(address: i32,path_to_restore: &str, display: bool) ->  Resu
     // upload document now
     let opt_at = api.eas_post_document(
         address,
-        true).await;
+        false).await;
     let (eas_r, status) = get_result_status(opt_at);
     if !status {
         println!("Failed to get archive ticket. End eas process !");
         return Ok(false);
     }
     eas_r.show("Upload Doc");
-    let opt_cl = api.eas_get_content_list(true).await;
+    let opt_cl = api.eas_get_content_list(false).await;
     let (eas_r, status) = get_result_status(opt_cl);
 
     if !status {
@@ -46,8 +46,6 @@ async fn eas_process(address: i32,path_to_restore: &str, display: bool) ->  Resu
         return Ok(false);
     }
     eas_r.show("Content list");
-
-    // TODO get contentList with /eas/documents/{ticket}/contentList
 
     // TODO download individual file with POST to /eas/documents/{ticket}/fileName
     // TODO filename in requestBody (schema downloadItemRequest)
@@ -97,7 +95,7 @@ async fn main() {
     if test {
         let final_result = eas_process(
             address,
-            file_to_restore,true).await;
+            file_to_restore,false).await;
         match final_result {
             Ok(true) =>  println!("eas test is ok"),
             Ok(false) => println!("eas test failed"),

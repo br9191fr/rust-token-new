@@ -182,10 +182,6 @@ impl EasDocument {
         }
     }
 }
-#[derive(Deserialize, Debug)]
-pub struct EasContentList {
-    content: String,
-}
 
 pub struct EasAPI {
     credentials: Credentials,
@@ -236,7 +232,7 @@ impl EasAPI {
             .header("Content-Type", "application/json")
             .json(&cred_value)
             .send().await?;
-
+        if display { println!("wait for answer"); }
         let sc = response.status();
         if display {
             let headers = response.headers();
@@ -244,6 +240,7 @@ impl EasAPI {
                 println!("{:?}: {:?}", key, value);
             }
         }
+        if display { println!("Decoding body"); }
         let body = response.text().await.unwrap();
         if !sc.is_success() {
             println!("Request failed => {}", sc);
@@ -325,9 +322,9 @@ impl EasAPI {
         }
 
         let meta = json!([
-            {"name": "ClientId", "value": "123456789"},
-            {"name": "CustomerId", "value": "AZER456"},
-            {"name": "Documenttype", "value": "Incoming invoice"}]);
+            {"name": "ClientId", "value": "987654321"},
+            {"name": "CustomerId", "value": "CLIENT-BRI"},
+            {"name": "Documenttype", "value": "Validated invoice"}]);
 
         let upload_file_fingerprint = json!([
             {"fileName": fname, "value" : digest_string.clone(),"fingerPrintAlgorithm": "SHA-256"},
@@ -423,7 +420,7 @@ impl EasAPI {
     }
     pub async fn eas_get_content_list(&self,display: bool) -> Result<EasResult, reqwest::Error> {
         let request_url = format!("https://apprec.cecurity.com/eas.integrator.api/eas/documents/{}/contentList",self.get_ticket_string());
-        if display { println!("Start download document"); }
+        if display { println!("Start get content list"); }
         let auth_bearer = format!("Bearer {}", self.get_token_string());
 
         let response = Client::new()
@@ -446,12 +443,18 @@ impl EasAPI {
         if display {
             println!("Status : {:#?}\n{:#?}", sc, body);
         }
-        let r: Result<EasDocument, Error> = serde_json::from_str(&body);
+        let r: Result<Vec<String>, Error> = serde_json::from_str(&body);
         let eas_r: EasResult = match r {
-            Ok(res) => EasResult::EasDocument(res),
+            Ok(res) => {
+                println!("Found {} documents",res.len());
+                for st in &res {
+                    println!("Found {}",st);
+                }
+                EasResult::ApiOk
+            },
             Err(_e) => EasResult::None
         };
-        Ok(EasResult::None)
+        Ok(eas_r)
     }
     pub async fn eas_download_document(&self, file_to_restore: String, display: bool) -> Result<EasResult, reqwest::Error> {
         let request_url = format!("{}/{}", "https://apprec.cecurity.com/eas.integrator.api/eas/documents", self.get_ticket_string());
