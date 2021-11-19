@@ -4,14 +4,12 @@ use easlib::{EasAPI, Credentials};
 use easlib::{get_result_status, build_static_locations};
 
 use std::env;
-// Result <bool, reqwest::Error >
+
 async fn eas_process(address: i32, display: bool) ->  Result <bool, reqwest::Error > {
     println!("Step1");
-    let credentials = Credentials::new(
-        "f33c398c-0f77-4351-9f92-1e20fa3fd2f8".to_owned(),
-        "e1320735-e174-4150-9edb-b5daf85be6d1".to_owned(),
-        "demoAccount".to_owned()
-    );
+    //let _credentials_ok = get_credentials();
+    //let credentials = Credentials::new("xxxxx".to_owned(),"tttt".to_owned(),"myAccount".to_owned());
+
     let mut api = EasAPI::new(credentials);
 
     println!("Step authenticate");

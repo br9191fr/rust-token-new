@@ -11,16 +11,16 @@ use std::path::Path;
 use std::str;
 use std::sync::Mutex;
 
-use data_encoding::{HEXLOWER, BASE64};
+use data_encoding::{BASE64, HEXLOWER};
 use lazy_static::lazy_static;
 
 use reqwest::{Client, StatusCode};
-use reqwest::multipart::{Form};
+use reqwest::multipart::Form;
 use ring::digest::{Context, Digest, SHA256};
-use serde_json::{json, Error};
+use serde_json::{Error, json};
 use serde::{Deserialize, Serialize};
 use tokio::fs::File as Tokio_File;
-use tokio::io::{AsyncReadExt};
+use tokio::io::AsyncReadExt;
 use tokio_util::codec::{BytesCodec, FramedRead};
 
 
