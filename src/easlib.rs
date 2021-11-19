@@ -22,17 +22,7 @@ use tokio::io::AsyncReadExt;
 use tokio_util::codec::{BytesCodec, FramedRead};
 
 // ----------------------
-// In master after branch2
-// ----------------------
-// ----------------------
-// In my_branch 2
-// ----------------------
-
-// ----------------------
-// In my_branch only
-// ----------------------
-// ----------------------
-// In my_branch second commit
+// final master
 // ----------------------
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Credentials {
