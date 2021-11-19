@@ -1,29 +1,25 @@
 extern crate easlib;
 
-use easlib::{EasAPI, Credentials};
-use easlib::{get_result_status, build_static_locations};
-
+use easlib::easlib::{EasAPI};
+use easlib::easlib::{get_result_status, build_static_locations};
+use easlib::bri_cred::{get_credentials};
 use std::env;
 
 async fn eas_process(address: i32, display: bool) ->  Result <bool, reqwest::Error > {
-    println!("Step1");
-    //let _credentials_ok = get_credentials();
     //let credentials = Credentials::new("xxxxx".to_owned(),"tttt".to_owned(),"myAccount".to_owned());
+    let credentials_ok = get_credentials();
+    let mut api = EasAPI::new(credentials_ok);
 
-    let mut api = EasAPI::new(credentials);
-
-    println!("Step authenticate");
+    if display { println!("Step authenticate"); }
     // authenticate and get token
     let opt_t = api.eas_get_token(false).await;
-    println!("Step get status");
+    if display { println!("Step get status"); }
     let (eas_r,status) = get_result_status(opt_t);
     if !status {
         println!("Failed to get token. End eas process !");
         return Ok(false);
     }
-    if display {
-        println!("token found {}",api.get_token_string());
-    }
+    if display { println!("token found {}",api.get_token_string()); }
     eas_r.show("Get Token");
 
     // upload document now
@@ -45,7 +41,7 @@ async fn eas_process(address: i32, display: bool) ->  Result <bool, reqwest::Err
     }
     eas_r.show("Content list");
 
-    let opt_ar = api.eas_get_archive(true).await;
+    let opt_ar = api.eas_get_archive(false).await;
     let (eas_r, status) = get_result_status(opt_ar);
 
     if !status {
@@ -62,28 +58,6 @@ async fn eas_process(address: i32, display: bool) ->  Result <bool, reqwest::Err
 
     // TODO get matching documents
 
-    // TODO download document
-    // TODO Errors found => need corrections
-    /*
-    let opt_d = api.eas_download_document(
-        path_to_restore.clone().to_string(),
-        false).await;
-    let (eas_r, status) = get_result_status(opt_d);
-    if !status {
-        println!("Failed to get and restore archive. End eas process !");
-        return Ok(false);
-    }
-    eas_r.show("Download Doc");
-
-    // get document metadata
-    let opt_m = api.eas_get_document_metadata(false).await;
-    let (eas_r, status) = get_result_status(opt_m);
-    if !status {
-        println!("Failed to get metadata of archive. End eas process !");
-        return Ok(false);
-    }
-    eas_r.show("Get Metadata");
-    */
     return Ok(true);
 }
 

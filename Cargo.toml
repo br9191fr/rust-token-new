@@ -7,11 +7,15 @@ edition = "2021"
 
 [lib]
 name = "easlib"
-path = "src/easlib.rs"
+path = "src/lib.rs"
 
 [[bin]]
 name = "partial_test"
 path = "src/bin/partial_test.rs"
+
+[[bin]]
+name = "eas_test"
+path = "src/bin/eas_test.rs"
 
 [[bin]]
 name = "read_lines"

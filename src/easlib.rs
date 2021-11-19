@@ -1,7 +1,5 @@
 #![allow(dead_code)]
 
-mod lib;
-
 use std::collections::HashMap;
 
 use std::fmt;
@@ -93,7 +91,7 @@ impl ErrorResponse {
         string
     }
     fn new(error_code: String, error_message: String, status: String) -> Self {
-        ErrorResponse {errorCode: error_code, errorMessage: error_message, status: status}
+        ErrorResponse {errorCode: error_code, errorMessage: error_message, status }
     }
 }
 #[derive(Deserialize, Debug)]
@@ -202,15 +200,15 @@ impl EasDocument {
 }
 #[derive(Deserialize, Debug)]
 pub struct EasArchiveInfo {
-    mimeType: String,
+    mime_type: String,
     length: usize,
 }
 
 impl EasArchiveInfo {
     fn new(mime_type: String, length: usize) -> Self {
         EasArchiveInfo {
-            mimeType: mime_type,
-            length: length,
+            mime_type,
+            length,
         }
     }
 }
@@ -228,7 +226,7 @@ fn deserialize_error() -> () {
 
 impl EasAPI {
     pub fn new(credentials: Credentials) -> Self {
-        EasAPI { credentials: credentials, token: None, digest: None, ticket: None, error_response: None }
+        EasAPI { credentials, token: None, digest: None, ticket: None, error_response: None }
     }
     pub fn set_credentials(&mut self, credentials: Credentials) {
         self.credentials = credentials;
@@ -258,19 +256,19 @@ impl EasAPI {
         }
     }
     pub fn failure_info (&self, sc: StatusCode, body: &str) -> EasResult {
-        match sc {
-            StatusCode::BAD_REQUEST => return EasResult::ReqWestError(ReqWestError {message:"Bad Request".to_string()}),
+        return match sc {
+            StatusCode::BAD_REQUEST => EasResult::ReqWestError(ReqWestError { message: "Bad Request".to_string() }),
             _ => {
                 let er: Result<ErrorResponse, Error> = serde_json::from_str(&body);
                 let a_er: EasResult = match er {
                     Ok(res) => {
-                        EasResult::EasError(EasError{message:res.to_string()})
+                        EasResult::EasError(EasError { message: res.to_string() })
                     }
                     Err(e) => {
-                        EasResult::SerdeError(SerdeError{message:e.to_string()})
+                        EasResult::SerdeError(SerdeError { message: e.to_string() })
                     }
                 };
-                return a_er;
+                a_er
             }
         }
     }
@@ -416,9 +414,7 @@ impl EasAPI {
             .send()
             .await?;
         let sc = response.status();
-        let display2 = false;
-        println!("Status code {} => {} {}",sc.as_u16() , sc.is_success(),sc.is_client_error());
-        if display2 {
+        if display {
             let headers = response.headers();
             for (key, value) in headers.iter() {
                 println!("{:?}: {:?}", key, value);
@@ -489,7 +485,7 @@ impl EasAPI {
     }
     pub async fn eas_get_archive(&self, display: bool) -> Result<EasResult, reqwest::Error> {
         let request_url = format!("{}/{}", "https://apprec.cecurity.com/eas.integrator.api/eas/documents", self.get_ticket_string());
-        if display { println!("Start download document"); }
+        if display { println!("Start get archive"); }
         let auth_bearer = format!("Bearer {}", self.get_token_string());
 
         let response = Client::new()
@@ -518,7 +514,7 @@ impl EasAPI {
             Ok(res) => (EasResult::EasDocument(res),true),
             Err(e) => (EasResult::SerdeError(SerdeError {message: e.to_string()}),false)
         };
-        if !status {return Ok(eas_r);}
+        if !status {println!("ERRRRRor");return Ok(eas_r);}
         // Transform base64 => [u8] and save
         if let EasResult::EasDocument(res) = &eas_r {
             let mime_type = &*&res.mimeType;
@@ -530,8 +526,8 @@ impl EasAPI {
             let mut file = File::create("/Users/bruno/my_arch.zip").unwrap();
             // Write a slice of bytes to the file
             let final_result = match file.write_all(document.as_slice()) {
-                Ok(r1) => true,
-                Err(e) => false
+                Ok(_r1) => true,
+                Err(_e) => false
             };
             if final_result {
                 if display { println!("stop get document"); }
@@ -624,7 +620,7 @@ impl std::fmt::Display for EasDocument {
 }
 impl std::fmt::Display for EasArchiveInfo {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "mimetype:{:#?}, length:{:#?}", self.mimeType, self.length)
+        writeln!(f, "mime_type:{:#?}, length:{:#?}", self.mime_type, self.length)
     }
 }
 impl std::fmt::Display for EasNVPair {
