@@ -5,7 +5,7 @@ use easlib::{get_result_status, build_static_locations};
 
 use std::env;
 // Result <bool, reqwest::Error >
-async fn eas_process(address: i32,path_to_restore: &str, display: bool) ->  Result <bool, reqwest::Error > {
+async fn eas_process(address: i32, display: bool) ->  Result <bool, reqwest::Error > {
     println!("Step1");
     let credentials = Credentials::new(
         "f33c398c-0f77-4351-9f92-1e20fa3fd2f8".to_owned(),
@@ -47,6 +47,15 @@ async fn eas_process(address: i32,path_to_restore: &str, display: bool) ->  Resu
     }
     eas_r.show("Content list");
 
+    let opt_ar = api.eas_get_archive(true).await;
+    let (eas_r, status) = get_result_status(opt_ar);
+
+    if !status {
+        println!("Failed to get full archive. End eas process !");
+        return Ok(false);
+    }
+    eas_r.show("Archive Info");
+
     // TODO download individual file with POST to /eas/documents/{ticket}/fileName
     // TODO filename in requestBody (schema downloadItemRequest)
 
@@ -83,19 +92,17 @@ async fn eas_process(address: i32,path_to_restore: &str, display: bool) ->  Resu
 #[tokio::main]
 async fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        println!("Missing arguments\nUsage: pgm file_to_archive file_to_restore");
+    if args.len() < 1 {
+        println!("Missing arguments\nUsage: pgm file_to_archive");
         return;
     }
     let file_to_archive = &args[1];
-    let file_to_restore = &args[2];
 
     let address = build_static_locations(1,file_to_archive);
     let test = true;
     if test {
         let final_result = eas_process(
-            address,
-            file_to_restore,false).await;
+            address,false).await;
         match final_result {
             Ok(true) =>  println!("eas test is ok"),
             Ok(false) => println!("eas test failed"),
@@ -103,8 +110,8 @@ async fn main() {
         }
     }
     else {
-        println!("infos file: {}\n, address: {}\n, restore: {}",
-                 file_to_archive, address,file_to_restore);
+        println!("infos file: {}\n, address: {}",
+                 file_to_archive, address);
     }
 
     println!("end");
